@@ -2,15 +2,9 @@ from __future__ import annotations
 
 from langgraph.graph.state import CompiledStateGraph
 
-# pyrefly: ignore [missing-import]
 from src.graph.graph import support_graph
-# pyrefly: ignore [missing-import]
 from src.graph.state import SupportState
-# pyrefly: ignore [missing-import]
-from src.llm.models import (
-    AgentResponse,
-    SupportTicket,
-)
+from src.ai.models import (AgentResponse, SupportTicket,)
 
 
 class SupportAgent:
@@ -32,17 +26,10 @@ class SupportAgent:
     - LLM Providers
     """
 
-    def __init__(
-        self,
-        graph: CompiledStateGraph = support_graph,
-    ) -> None:
-
+    def __init__(self, graph: CompiledStateGraph = support_graph,) -> None:
         self.graph = graph
 
-    def invoke(
-        self,
-        ticket: SupportTicket,
-    ) -> AgentResponse:
+    def invoke(self, ticket: SupportTicket,) -> AgentResponse:
 
         state: SupportState = {
             "issue": ticket.issue.strip(),
@@ -51,7 +38,6 @@ class SupportAgent:
         }
 
         result = self.graph.invoke(state)
-
         
         return AgentResponse(
             response=result["response"],

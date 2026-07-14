@@ -26,10 +26,10 @@ class IngestionPipeline:
         vectors = self.embedder.embed_chunks(chunks)
         print("Embedding process completed.....")
         
-        with open("artifacts/vector_records.pkl", "wb") as f:
+        with open("data/artifacts/vector_records.pkl", "wb") as f:
             pickle.dump(vectors, f)
 
-        with open("artifacts/vector_records.pkl", "rb") as f:
+        with open("data/artifacts/vector_records.pkl", "rb") as f:
             vectors = pickle.load(f)
 
         #self.vector_store.upsert_vectors(vectors)
@@ -51,7 +51,6 @@ class IngestionPipeline:
 
 
 def main():
-
     pipeline = IngestionPipeline()
     total_vectors = pipeline.ingest()
     print(f"\nSuccessfully indexed {total_vectors} vectors.")

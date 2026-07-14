@@ -15,11 +15,11 @@ import pandas as pd
 from evaluation.dataset import EvaluationDataset
 
 from src.graph.support_agent import SupportAgent
-from src.llm.models import SupportTicket
+from src.ai.models import SupportTicket
 
-from src.llm.client import LLMClient
-from src.llm.evaluation_models import EvaluationResult
-from src.prompts.evaluation_prompt import EvaluationPromptBuilder
+from src.ai.client import LLMClient
+from evaluation.evaluation_models import EvaluationResult
+from evaluation.evaluation_prompt import EvaluationPromptBuilder
 
 
 class EvaluationExperiment:

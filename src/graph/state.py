@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-from src.llm.models import RetrievedChunk
-from src.llm.models import SupportResponse
-from src.llm.models import SourceDocument
+from src.ai.models import RetrievedChunk
+from src.ai.models import SupportResponse
+from src.ai.models import SourceDocument
 
 
 class SupportState(TypedDict, total=False):
@@ -50,4 +50,4 @@ class SupportState(TypedDict, total=False):
     # Output
     # =======================================================================
 
-    response: SupportResponse    
+    response: SupportResponse 

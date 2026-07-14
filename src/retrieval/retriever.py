@@ -2,10 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
-
-# pyrefly: ignore [missing-import]
 from src.retrieval.context_builder import ContextBuilder
-# pyrefly: ignore [missing-import]
 from src.retrieval.hybrid_search import HybridSearch
 
 

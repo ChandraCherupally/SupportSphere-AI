@@ -1,6 +1,56 @@
 from __future__ import annotations
 from typing import Any
 
+
+def validate_input(state: dict[str, Any]) -> list[str]:
+    """
+    Validate ticket inputs before retrieval.
+    Returns a list of warning/error messages.
+    """
+    warnings = []
+    
+    company = state.get("company", "").strip().lower()
+    supported_companies = {"hackerrank", "claude", "visa"}
+    
+    if company not in supported_companies:
+        warnings.append(f"Unsupported company: '{state.get('company')}'")
+        
+    issue = state.get("issue", "").strip()
+    if not issue:
+        warnings.append("Ticket issue is empty")
+        
+    return warnings
+
+
+
+def validate_retrieval(state: dict[str, Any]) -> list[str]:
+    """
+    Validate the retrieved context.
+    Returns a list of warning/error messages.
+    """
+    warnings = []
+    context = state.get("context", [])
+    
+    if not context:
+        warnings.append("No context chunks retrieved")
+    else:
+        ticket_company = state.get("company", "").strip().lower()
+        for i, chunk in enumerate(context):
+            # context chunks can be RetrievedChunk models or dicts depending on where they come from
+            chunk_company = getattr(chunk, "company", "")
+            if not chunk_company and isinstance(chunk, dict):
+                chunk_company = chunk.get("company", "")
+                
+            if chunk_company.strip().lower() != ticket_company:
+                warnings.append(
+                    f"Company mismatch in chunk {i+1}: expected '{state.get('company')}', got '{chunk_company}'"
+                )
+                
+    return warnings
+
+
+
+
 def validate_and_correct_output(state: dict[str, Any]) -> tuple[Any, list[str]]:
     """
     Validate and programmatically correct the output response.
@@ -49,3 +99,5 @@ def validate_and_correct_output(state: dict[str, Any]) -> tuple[Any, list[str]]:
                 response.response = "I am sorry, this is out of scope from my capabilities"
                 
     return response, warnings
+
+

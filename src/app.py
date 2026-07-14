@@ -58,7 +58,7 @@ HybridSearch.search = patched_hybrid_search
 # ---------------------------------------------------------
 # Monkey-patch LLMClient to collect metrics
 # ---------------------------------------------------------
-import src.llm.client as client
+import src.ai.client as client
 original_generate = client.LLMClient.generate
 
 def patched_generate(self, messages, response_schema):
@@ -103,9 +103,9 @@ client.LLMClient.generate = patched_generate
 
 # Now import the support agent and state components
 from src.graph.support_agent import SupportAgent
-from src.llm.models import SupportTicket
+from src.ai.models import SupportTicket
 import src.graph.nodes as nodes
-from src.llm.client import LLMClient
+from src.ai.client import LLMClient
 import src.config as src_config
 
 # ---------------------------------------------------------

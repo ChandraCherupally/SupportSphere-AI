@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from src.graph.state import SupportState
 
-from src.llm.client import LLMClient
-from src.llm.models import SupportResponse
-from src.llm.prompt_builder import PromptBuilder
+from src.ai.client import LLMClient
+from src.ai.models import SupportResponse
+from src.ai.prompt_builder import PromptBuilder
 
 from src.retrieval.retriever import Retriever
-from src.llm.models import SupportTicket
+from src.ai.models import SupportTicket
 
-from src.validation.input_validator import validate_input
-from src.validation.retrieval_validator import validate_retrieval
-from src.validation.output_validator import validate_and_correct_output
+from graph.guardrails import (
+    apply_input_guardrails, 
+    apply_retrieval_guardrails, 
+    apply_output_guardrails
+)
 
 # =============================================================================
 # Singleton Components
@@ -32,7 +34,7 @@ def input_check_node(state: SupportState) -> SupportState:
     """
     Validate ticket input before retrieval.
     """
-    warnings = validate_input(state)
+    warnings = apply_input_guardrails(state)
     return {
         "warnings": state.get("warnings", []) + warnings
     }
@@ -75,7 +77,7 @@ def retrieval_check_node(state: SupportState) -> SupportState:
     """
     Validate retrieved documentation context.
     """
-    warnings = validate_retrieval(state)
+    warnings = apply_retrieval_guardrails(state)
     return {
         "warnings": state.get("warnings", []) + warnings
     }
@@ -118,8 +120,9 @@ def output_check_node(state: SupportState) -> SupportState:
     """
     Validate and correct the generated response.
     """
-    corrected_response, warnings = validate_and_correct_output(state)
+    corrected_response, warnings = apply_output_guardrails(state)
     return {
         "response": corrected_response,
         "warnings": state.get("warnings", []) + warnings
     }
+
