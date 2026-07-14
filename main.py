@@ -1,5 +1,5 @@
 from src.graph.support_agent import SupportAgent
-from src.llm.models import SupportTicket
+from src.ai.models import SupportTicket
 
 query = """I'm noticing that you all have many default versions of roles. (e.g. front end developer for react, angular, vue.js, etc.) What do you consider best practice 
 for when to create a new test versus create a variant of the test? What are the advantages and disadvantages of using variants?

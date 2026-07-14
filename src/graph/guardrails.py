@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 
 
-def validate_input(state: dict[str, Any]) -> list[str]:
+def apply_input_guardrails(state: dict[str, Any]) -> list[str]:
     """
     Validate ticket inputs before retrieval.
     Returns a list of warning/error messages.
@@ -23,7 +23,7 @@ def validate_input(state: dict[str, Any]) -> list[str]:
 
 
 
-def validate_retrieval(state: dict[str, Any]) -> list[str]:
+def apply_retrieval_guardrails(state: dict[str, Any]) -> list[str]:
     """
     Validate the retrieved context.
     Returns a list of warning/error messages.
@@ -51,7 +51,7 @@ def validate_retrieval(state: dict[str, Any]) -> list[str]:
 
 
 
-def validate_and_correct_output(state: dict[str, Any]) -> tuple[Any, list[str]]:
+def apply_output_guardrails(state: dict[str, Any]) -> tuple[Any, list[str]]:
     """
     Validate and programmatically correct the output response.
     Returns (corrected_response, warnings).

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from langgraph.graph import END
-from langgraph.graph import START
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph, START, END
 
 from src.graph.nodes import (
     input_check_node,

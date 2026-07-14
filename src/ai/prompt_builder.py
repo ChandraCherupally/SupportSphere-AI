@@ -4,7 +4,7 @@ from typing import Any
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 
-from src.prompts.system_prompt import SYSTEM_PROMPT
+from src.ai.system_prompt import SYSTEM_PROMPT
 from src.ai.models import SupportTicket
 
 class PromptBuilder:
