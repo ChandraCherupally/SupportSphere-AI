@@ -27,9 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 DATA_DIR = BASE_DIR / "data"
 
-ARTIFACTS_DIR = BASE_DIR / "artifacts"
+ARTIFACTS_DIR = DATA_DIR / "artifacts"
 
-PROMPTS_DIR = BASE_DIR / "src" / "prompts"
+PROMPTS_DIR = BASE_DIR / "ai"
 
 # =============================================================================
 # LLM

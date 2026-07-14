@@ -9,7 +9,7 @@ from src.ai.prompt_builder import PromptBuilder
 from src.retrieval.retriever import Retriever
 from src.ai.models import SupportTicket
 
-from graph.guardrails import (
+from src.graph.guardrails import (
     apply_input_guardrails, 
     apply_retrieval_guardrails, 
     apply_output_guardrails
