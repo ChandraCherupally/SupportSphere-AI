@@ -1,0 +1,38 @@
+Issue,Subject,Company,Response,Product Area,Status,Request Type
+site is down & none of the pages are accessible,,None,Escalate to a human,,Escalated,bug
+"i signed up using google login on hackerrank community , so i do not have a separate hackerrank password. please delete my account
+",,HackerRank,"To delete your HackerRank account created via Google login, first set a password for your account, as Google login accounts do not have one by default.
+
+Follow these steps to set a password and delete your account:
+
+Go to the HackerRank login page and click ""Forgot your password?""
+Enter the email linked to your Google login and follow the instructions to reset and set a new password.
+Log in to your HackerRank account using the new password.
+Click your profile icon in the top-right corner and select Settings.
+Scroll to the Delete Accounts section.
+Click Delete Account and follow the prompts, entering your new password to confirm.
+
+Deleting your account will permanently remove all data and cannot be undone.",community,Replied,product_issue
+"One of my claude conversations has some private info, i forgot to make a temporary chat, is there anything
+ else that can be done? like delete etc?",,Claude,"To delete an individual conversation:
+
+1. Navigate to the conversation you want to delete.
+
+2. Click on the name of the conversation at the top of the screen.
+
+3. Select either ""Delete"" from the options that appear:
+
+
+
+https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation",privacy,Replied,product_issue
+What is the name of the actor in Iron Man?,"Urgent, please help",None ,"I am sorry, this is out of scope from my capabilities",conversation_management,Replied,invalid
+I bought Visa Traveller's Cheques from Citicorp and they were stolen in Lisbon last night. What do I do?,,Visa,"Call the issuer (Citicorp) immediately. 
+Freephone 1-800-645-6556 or collect 1-813-623-1709, Mon–Fri 6:30 am–2:30 pm EST. 
+
+Automated cheque verification is available 24/7 in English/Spanish; outside Citicorp's hours your call is recorded and returned the next business day.
+
+Have this info ready before you call, it's what the issuer will ask: cheque serial numbers, where and when you bought the cheques, how/when they were lost or stolen, and the issuer name (Citicorp). 
+
+Refunds can typically be arranged within 24 hours, subject to T&Cs.
+Notify the local police in Lisbon (Visa's safety guidance for lost/stolen cheques).
+If you can't reach Citicorp, use Visa's traveller's-cheque contact form on visa.co.in.",travel_support,Replied,product_issue

@@ -1,206 +1,164 @@
 """
-SupportSphere Evaluation Experiment.
-
-Runs the SupportSphere agent against the evaluation dataset,
-computes business metrics, evaluates the generated answer
-using an LLM-as-a-Judge, and saves the results.
-
-This module is intentionally independent of Streamlit.
+Module for organizing evaluation runs as historical experiments.
 """
 
 from __future__ import annotations
 
-import pandas as pd
+import glob
+import json
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Union
 
-from evaluation.dataset import EvaluationDataset
-
-from src.graph.support_agent import SupportAgent
-from src.ai.models import SupportTicket
-
-from src.ai.client import LLMClient
-from evaluation.evaluation_models import EvaluationResult
-from evaluation.evaluation_prompt import EvaluationPromptBuilder
+logger = logging.getLogger(__name__)
 
 
-class EvaluationExperiment:
+class ExperimentManager:
+    """
+    Manages historical evaluation reports, loading, and formatting comparison metrics.
+    """
 
-    def __init__(self) -> None:
-        self.dataset = EvaluationDataset()
-        self.agent = SupportAgent()
-        self.llm = LLMClient()
-        self.prompt_builder = EvaluationPromptBuilder()
+    def __init__(self, reports_dir: Union[str, Path] = "data/reports") -> None:
+        self.reports_dir = Path(reports_dir)
 
-    # ---------------------------------------------------------
-    # Exact Match
-    # ---------------------------------------------------------
+    def list_experiments(self) -> List[Dict[str, Any]]:
+        """
+        Scans registry index.json for experiments and loads their metrics.
 
-    @staticmethod
-    def exact_match(
-        prediction: str,
-        expected: str,
-    ) -> int:
+        Returns:
+            List of dictionaries containing experiment summaries and metadata.
+        """
+        index_path = self.reports_dir / "experiments" / "index.json"
+        if not index_path.exists():
+            return []
+            
+        try:
+            with open(index_path, "r", encoding="utf-8") as f:
+                registry = json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load registry index.json: {e}")
+            return []
+            
+        experiments = []
+        for item in registry:
+            exp_id = item.get("id")
+            report_path_str = item.get("report_path")
+            if not report_path_str:
+                continue
+            
+            report_dir = Path(report_path_str)
+            if not report_dir.is_absolute():
+                # check relative to workspace root or reports parent
+                report_dir = Path(report_path_str)
+                
+            summary_path = report_dir / "summary.json"
+            if not summary_path.exists():
+                summary_path = self.reports_dir / "experiments" / exp_id / "summary.json"
+                report_dir = self.reports_dir / "experiments" / exp_id
+                
+            if not summary_path.exists():
+                continue
+                
+            try:
+                with open(summary_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    
+                meta = data.get("metadata", {})
+                ragas = data.get("ragas", {})
+                req_type = data.get("classification", {}).get("request_type", {})
+                prod_area = data.get("classification", {}).get("product_area", {})
+                status = data.get("classification", {}).get("status", {})
+                routing = data.get("routing", {})
+                
+                experiments.append({
+                    "id": exp_id,
+                    "timestamp": item.get("timestamp", "unknown"),
+                    "strategy_used": meta.get("strategy_used", exp_id),
+                    "provider": item.get("provider", meta.get("provider", "unknown")),
+                    "model": item.get("model", meta.get("model", "unknown")),
+                    "search_mode": item.get("search_mode", meta.get("search_mode", "unknown")),
+                    "reranker": item.get("reranker", meta.get("reranker", "unknown")),
+                    "top_k": item.get("top_k", meta.get("top_k", 0)),
+                    "total_tickets": meta.get("total_tickets", 0),
+                    "elapsed_time": meta.get("elapsed_time_seconds", 0.0),
+                    "avg_latency": meta.get("avg_latency_seconds", 0.0),
+                    "avg_chunks": meta.get("avg_chunks_retrieved", 0.0),
+                    
+                    # Accuracies
+                    "request_type_accuracy": req_type.get("accuracy", 0.0),
+                    "product_area_accuracy": prod_area.get("accuracy", 0.0),
+                    "status_accuracy": status.get("accuracy", 0.0),
+                    
+                    # Routing
+                    "retrieval_decision_accuracy": routing.get("retrieval_decision_accuracy", 1.0),
+                    "escalation_accuracy": routing.get("escalation_accuracy", 1.0),
+                    "out_of_scope_accuracy": routing.get("out_of_scope_accuracy", 1.0),
+                    "greeting_accuracy": routing.get("greeting_accuracy", 1.0),
+                    "retrieval_skip_rate": routing.get("retrieval_skip_rate", 0.0),
+                    
+                    # Ragas Scores
+                    "context_precision": ragas.get("avg_context_precision"),
+                    "context_recall": ragas.get("avg_context_recall"),
+                    "faithfulness": ragas.get("avg_faithfulness"),
+                    "answer_correctness": ragas.get("avg_answer_correctness"),
+                    "answer_relevancy": ragas.get("avg_answer_relevancy"),
+                    
+                    "summary_json_path": summary_path.absolute(),
+                    "report_csv_path": report_dir / "evaluation_report.csv",
+                    "evaluation_error": meta.get("evaluation_error"),
+                })
+            except Exception as e:
+                logger.error(f"Failed to load experiment {exp_id} summary: {e}")
+                
+        return experiments
 
-        return int(
-            prediction.strip().lower()
-            ==
-            expected.strip().lower()
-        )
-
-    # ---------------------------------------------------------
-    # Generic Judge
-    # ---------------------------------------------------------
-
-    def judge(
-        self,
-        *,
-        metric: str,
-        question: str,
-        prediction: str,
-        reference: str,
-        retrieved_context: list[str],
-    ) -> EvaluationResult:
-
-        messages = self.prompt_builder.build(
-            metric=metric,
-            question=question,
-            prediction=prediction,
-            reference=reference,
-            retrieved_context="\n\n".join(
-                retrieved_context
-            ),
-        )
-
-        return self.llm.generate(
-            messages=messages,
-            response_schema=EvaluationResult,
-        )
-
-    # ---------------------------------------------------------
-    # Evaluate One Example
-    # ---------------------------------------------------------
-
-    def evaluate_example(
-        self,
-        example: dict,
-    ) -> dict:
-
-        ticket = SupportTicket(
-
-            issue=example["issue"],
-
-            subject=example["subject"],
-
-            company=example["company"],
-        )
-
-        import time
-        start_time = time.time()
-        prediction = self.agent.invoke(ticket)
-        latency = time.time() - start_time
-
-        correctness = self.judge(
-
-            metric="Answer Correctness",
-
-            question=example["issue"],
-
-            prediction=prediction.response.response,
-
-            reference=example["expected_response"],
-
-            retrieved_context=prediction.retrieved_context,
-        )
-
-        faithfulness = self.judge(
-
-            metric="Faithfulness",
-
-            question=example["issue"],
-
-            prediction=prediction.response.response,
-
-            reference=example["expected_response"],
-
-            retrieved_context=prediction.retrieved_context,
-        )
-
-        return {
-
-            # --------------------------------------------------
-            # Inputs
-            # --------------------------------------------------
-
-            "company": example["company"],
-
-            "subject": example["subject"],
-
-            "issue": example["issue"],
-
-            # --------------------------------------------------
-            # Business Metrics
-            # --------------------------------------------------
-
-            "request_type_accuracy": self.exact_match(
-                prediction.response.request_type,
-                example["expected_request_type"],
-            ),
-
-            "status_accuracy": self.exact_match(
-                prediction.response.status,
-                example["expected_status"],
-            ),
-
-            "product_area_accuracy": self.exact_match(
-                prediction.response.product_area,
-                example["expected_product_area"],
-            ),
-
-            # --------------------------------------------------
-            # Judge Metrics
-            # --------------------------------------------------
-
-            "answer_correctness":
-                correctness.score,
-
-            "faithfulness":
-                faithfulness.score,
-
-            "judge_reasoning":
-                faithfulness.reasoning,
-
-            # --------------------------------------------------
-            # Runtime
-            # --------------------------------------------------
-
-            "latency":
-                latency,
-
-            "num_chunks":
-                prediction.num_chunks,
-
-            "token_estimate":
-                prediction.token_estimate,
-        }
-
-    # ---------------------------------------------------------
-    # Run Evaluation
-    # ---------------------------------------------------------
-
-    def run(self) -> pd.DataFrame:
-
-        examples = self.dataset.load()
-
-        rows = []
-
-        for example in examples:
-
-            rows.append(
-                self.evaluate_example(
-                    example
-                )
-            )
-
-        df = pd.DataFrame(rows)
-
-        return df
-
+    def delete_experiment(self, experiment_id: str) -> bool:
+        """
+        Removes an experiment from the registry index.json and deletes its files from disk.
+        """
+        index_path = self.reports_dir / "experiments" / "index.json"
+        if not index_path.exists():
+            return False
+            
+        try:
+            with open(index_path, "r", encoding="utf-8") as f:
+                registry = json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load registry index.json: {e}")
+            return False
+            
+        # Find entry to remove
+        new_registry = []
+        target_path_str = None
+        for item in registry:
+            if item.get("id") == experiment_id:
+                target_path_str = item.get("report_path")
+            else:
+                new_registry.append(item)
+                
+        # Write back new registry
+        try:
+            with open(index_path, "w", encoding="utf-8") as f:
+                json.dump(new_registry, f, indent=4)
+        except Exception as e:
+            logger.error(f"Failed to save registry index.json: {e}")
+            return False
+            
+        # Delete directory from disk
+        if target_path_str:
+            target_dir = Path(target_path_str)
+            if not target_dir.is_absolute():
+                target_dir = Path(target_path_str)
+            if not target_dir.exists():
+                target_dir = self.reports_dir / "experiments" / experiment_id
+                
+            if target_dir.exists() and target_dir.is_dir():
+                import shutil
+                try:
+                    shutil.rmtree(target_dir)
+                    logger.info(f"Successfully deleted experiment files for {experiment_id} from {target_dir}")
+                except Exception as e:
+                    logger.error(f"Failed to delete files for {experiment_id} at {target_dir}: {e}")
+                    return False
+                    
+        return True

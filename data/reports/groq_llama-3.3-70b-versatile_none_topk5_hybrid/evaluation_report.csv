@@ -1,0 +1,44 @@
+company,subject,issue,expected_response,generated_response,strategy_used,expected_request_type,predicted_request_type,request_type_accuracy,expected_product_area,predicted_product_area,product_area_accuracy,expected_status,predicted_status,status_accuracy,retrieval_required,normalized_issue,normalized_subject,routing_reason,routing_confidence,latency,num_chunks,ragas_context_precision,ragas_context_recall,ragas_faithfulness,ragas_answer_correctness,ragas_answer_relevancy
+None,,site is down & none of the pages are accessible,Escalate to a human,Escalate to a human,Groq_llama-3.3-70b-versatile_Hybrid_None_5,bug,bug,1,,,1,Escalated,Escalated,1,False,site is down & none of the pages are accessible,,Unsupported company: None.,1.0,2.5763305999862496,0,,,,,
+HackerRank,,"i signed up using google login on hackerrank community , so i do not have a separate hackerrank password. please delete my account","To delete your HackerRank account created via Google login, first set a password for your account, as Google login accounts do not have one by default.
+
+Follow these steps to set a password and delete your account:
+
+Go to the HackerRank login page and click ""Forgot your password?""
+Enter the email linked to your Google login and follow the instructions to reset and set a new password.
+Log in to your HackerRank account using the new password.
+Click your profile icon in the top-right corner and select Settings.
+Scroll to the Delete Accounts section.
+Click Delete Account and follow the prompts, entering your new password to confirm.
+
+Deleting your account will permanently remove all data and cannot be undone.","If you signed up for HackerRank Community using Google login, you do not have a separate HackerRank password. To delete your account, you must first set a password. You can do this by following the steps to reset your password, which involves creating a new password through the 'Forgot Password?' link on the login page. Once a password is set, you can proceed with deleting your account by logging in, navigating to Settings > Account > Delete Accounts, and following the prompts. Please note that account deletion is permanent and cannot be recovered. If you cannot access your Google account, please contact HackerRank support at help@hackerrank.com for assistance.
+
+For detailed steps on resetting your password, please refer to: https://help.hackerrank.com/articles/2403570133-update-or-reset-password
+For detailed steps on deleting your account, please refer to: https://help.hackerrank.com/articles/5618101592-delete-an-account",Groq_llama-3.3-70b-versatile_Hybrid_None_5,product_issue,product_issue,1,community,community,1,Replied,Replied,1,True,"request to delete HackerRank account created via Google login, as no separate password exists",account deletion request,"User is requesting account deletion for HackerRank, which requires specific procedures or documentation.",0.9,10.23593660001643,5,0.0,1.0,0.0,0.0,0.8278425756891362
+Claude,,"One of my claude conversations has some private info, i forgot to make a temporary chat, is there anything
+ else that can be done? like delete etc?","To delete an individual conversation:
+
+1. Navigate to the conversation you want to delete.
+
+2. Click on the name of the conversation at the top of the screen.
+
+3. Select either ""Delete"" from the options that appear:
+
+
+
+https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation","You can delete individual conversations by navigating to your chat history, hovering over the conversation, and checking the selection box that appears. Then, click the ""Delete Selected"" button. Incognito chats, once closed, cannot be reopened. Please note that this article pertains to consumer products; for commercial products like Claude for Work or Claude API, different procedures may apply.
+
+https://support.claude.com/en/articles/8230524-how-can-i-delete-or-rename-a-conversation",Groq_llama-3.3-70b-versatile_Hybrid_None_5,product_issue,product_issue,1,privacy,claude,0,Replied,Replied,1,True,customer wants to know how to delete private information from a claude conversation because they forgot to make a temporary chat.,claude conversation privacy,Customer is asking how to delete private information from a Claude conversation.,0.95,8.911189500009641,5,0.0,0.0,0.0,0.0,0.7480481646804177
+None,"Urgent, please help",What is the name of the actor in Iron Man?,"I am sorry, this is out of scope from my capabilities","I am sorry, this is out of scope from my capabilities",Groq_llama-3.3-70b-versatile_Hybrid_None_5,invalid,invalid,1,conversation_management,conversation_management,1,Replied,Replied,1,False,What is the name of the actor in Iron Man?,"Urgent, please help",Unsupported company: None.,1.0,1.4294907000148669,0,,,,,
+Visa,,I bought Visa Traveller's Cheques from Citicorp and they were stolen in Lisbon last night. What do I do?,"Call the issuer (Citicorp) immediately. 
+Freephone 1-800-645-6556 or collect 1-813-623-1709, Mon–Fri 6:30 am–2:30 pm EST. 
+
+Automated cheque verification is available 24/7 in English/Spanish; outside Citicorp's hours your call is recorded and returned the next business day.
+
+Have this info ready before you call, it's what the issuer will ask: cheque serial numbers, where and when you bought the cheques, how/when they were lost or stolen, and the issuer name (Citicorp). 
+
+Refunds can typically be arranged within 24 hours, subject to T&Cs.
+Notify the local police in Lisbon (Visa's safety guidance for lost/stolen cheques).
+If you can't reach Citicorp, use Visa's traveller's-cheque contact form on visa.co.in.","If your Visa Traveller's Cheques were stolen, you should contact the issuing bank. For Citicorp, you can call them to arrange a refund. You will need to provide the cheque serial numbers, where and when you bought the cheques, how and when you think they were lost or stolen, and who the issuer is. A refund can usually be arranged within 24 hours, subject to terms and conditions.
+
+Please refer to this support article for the detailed steps : https://www.visa.co.in/support/consumer/travelers-cheques.html",Groq_llama-3.3-70b-versatile_Hybrid_None_5,product_issue,product_issue,1,travel_support,travel_support,1,Replied,Replied,1,True,What do I do after my Visa Traveller's Cheques were stolen?,Stolen Visa Traveller's Cheques,Customer is asking for a procedure to follow after their Visa Traveller's Cheques were stolen.,0.95,11.062831299990648,4,0.0,0.42857142857142855,0.0,0.0,0.0

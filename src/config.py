@@ -58,11 +58,15 @@ LLM_TEMPERATURE = float(
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
+GOOGLE_API_KEY_EMBED = os.getenv("GOOGLE_API_KEY_EMBED")
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 # =============================================================================
 # Embeddings
@@ -209,11 +213,15 @@ if EMBEDDING_PROVIDER not in SUPPORTED_EMBEDDING_PROVIDERS:
         f"Unsupported EMBEDDING_PROVIDER: {EMBEDDING_PROVIDER}"
     )
 
+# =============================================================================
+# Reranker
+# =============================================================================
 
-
-
-
-
-
+DEFAULT_RERANKER = "none"
+AVAILABLE_RERANKERS = ("none","cross_encoder", "flashrank","llm",)
+CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+LLM_RERANKER_MODEL = "gemini-2.5-flash"
+FLASHRANK_MODEL = "ms-marco-MiniLM-L-12-v2"
+FLASHRANK_MAX_LENGTH = 512
 
 

@@ -1,0 +1,22 @@
+[
+    {
+        "id": "exp_001",
+        "timestamp": "2026-07-17 21:41",
+        "provider": "google",
+        "model": "gemini-2.5-flash-lite",
+        "search_mode": "hybrid",
+        "reranker": "flashrank",
+        "top_k": 10,
+        "report_path": "data/reports/experiments/exp_001"
+    },
+    {
+        "id": "exp_002",
+        "timestamp": "2026-07-17 22:28",
+        "provider": "OpenAI",
+        "model": "gpt-4o",
+        "search_mode": "Hybrid",
+        "reranker": "FlashRank",
+        "top_k": 10,
+        "report_path": "data/reports/experiments/exp_002"
+    }
+]

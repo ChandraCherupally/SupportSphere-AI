@@ -26,13 +26,60 @@ class PromptBuilder:
                                                           ("human", "{user_prompt}")])
 
 
-    def build(self, *, ticket: SupportTicket, context: list[dict[str, Any]],) -> list[BaseMessage]:
+    def build(
+        self,
+        *,
+        ticket: SupportTicket,
+        context: list[dict[str, Any]],
+        retrieval_required: bool = True,
+        routing_reason: str = "",
+    ) -> list[BaseMessage]:
         """
         Build chat messages for the LLM.
         """
-
-        user_prompt = self._build_user_prompt(issue=ticket.issue, subject=ticket.subject, company=ticket.company,context=context)
+        if not retrieval_required:
+            user_prompt = self._build_routing_prompt(
+                issue=ticket.issue,
+                subject=ticket.subject,
+                company=ticket.company,
+                routing_reason=routing_reason,
+            )
+        else:
+            user_prompt = self._build_user_prompt(
+                issue=ticket.issue,
+                subject=ticket.subject,
+                company=ticket.company,
+                context=context,
+            )
         return self.template.format_messages(user_prompt=user_prompt)
+
+    def _build_routing_prompt(
+        self,
+        *,
+        issue: str,
+        subject: str,
+        company: str,
+        routing_reason: str,
+    ) -> str:
+        return f"""
+                # SUPPORT TICKET (ROUTING MODE)
+
+                Company
+                -------
+                {company or "Not Provided"}
+
+                Subject
+                -------
+                {subject or "Not Provided"}
+
+                Issue
+                -----
+                {issue}
+
+                Routing Reason
+                --------------
+                {routing_reason or "Retrieval skipped by routing gate."}
+                """
 
 
     def _build_user_prompt(self, *, issue: str, subject: str, company: str, context: list[dict[str, Any]],) -> str:
@@ -77,30 +124,16 @@ class PromptBuilder:
     def _format_context(
         context: list[dict[str, Any]],
     ) -> str:
-
         documents = []
-
         for idx, chunk in enumerate(context, start=1):
-            documents.append(
-                            f"""## Document {idx}
-
-                            Company:
-                            {chunk["company"]}
-
-                            Product Area:
-                            {chunk["product_area"]}
-
-                            Title:
-                            {chunk["title"]}
-
-                            Section:
-                            {chunk["section"]}
-
-                            URL:
-                            {chunk["url"]}
-
-                            Content:
-                            {chunk["text"]}
-                            """)
-
+            doc_str = (
+                f"## Document {idx}\n\n"
+                f"Company:\n{chunk.get('company', '')}\n\n"
+                f"Product Area:\n{chunk.get('product_area', '')}\n\n"
+                f"Title:\n{chunk.get('title', '')}\n\n"
+                f"Section:\n{chunk.get('section', '')}\n\n"
+                f"URL:\n{chunk.get('url', '')}\n\n"
+                f"Content:\n{chunk.get('text', '')}"
+            )
+            documents.append(doc_str)
         return "\n\n".join(documents)

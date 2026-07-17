@@ -16,29 +16,16 @@ class RetrievedChunk(BaseModel):
     A single retrieved knowledge chunk.
     """
 
-    model_config = ConfigDict(
-        extra="forbid"
-    )
+    model_config = ConfigDict(extra="forbid")
+    company: str = Field(description="Knowledge base source.")
+    product_area: str = Field(description="Product area associated with this document.")
+    title: str = Field(description="Document title.")
+    section: str = Field(description="Section title.")
+    url: str = Field(description="Documentation URL.")
 
-    company: str = Field(
-        description="Knowledge base source."
-    )
-
-    product_area: str = Field(
-        description="Product area associated with this document."
-    )
-
-    title: str = Field(
-        description="Document title."
-    )
-
-    section: str = Field(
-        description="Section title."
-    )
-
-    url: str = Field(
-        description="Documentation URL."
-    )
+    document_id: str = Field(description="Unique document identifier.")
+    chunk_id: str = Field(description="Unique chunk identifier.")
+    score: float = Field(description="Retrieval score.")
 
     text: str = Field(
         description="Retrieved document content."
@@ -71,6 +58,8 @@ class SupportTicket(BaseModel):
         default="",
         description="Company name."
     )
+
+    reranker: str = "none"
 # =============================================================================
 # Structured LLM Response
 # =============================================================================
@@ -149,11 +138,13 @@ class AgentResponse(BaseModel):
         default_factory=list
     )
 
-    # NEW
     retrieved_context: list[str] = Field(
         default_factory=list,
         description="Retrieved document text used to generate the answer."
     )
+
+    retrieved_chunks: list[RetrievedChunk] = Field(
+        default_factory=list, description="Retrieved chunks with metadata.")
 
     num_chunks: int = Field(
         default=0
@@ -161,4 +152,30 @@ class AgentResponse(BaseModel):
 
     token_estimate: int = Field(
         default=0
+    )
+
+    # Decision Gate fields (NEW)
+    retrieval_required: bool = Field(
+        default=True,
+        description="Whether documentation retrieval was performed."
+    )
+
+    normalized_issue: str = Field(
+        default="",
+        description="Normalized description of the customer issue."
+    )
+
+    normalized_subject: str = Field(
+        default="",
+        description="Normalized subject of the ticket."
+    )
+
+    routing_reason: str = Field(
+        default="",
+        description="Justification for skipping or running retrieval."
+    )
+
+    confidence: float = Field(
+        default=1.0,
+        description="Confidence score of the routing decision."
     )

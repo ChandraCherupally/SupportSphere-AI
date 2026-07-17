@@ -26,6 +26,20 @@ class SupportState(TypedDict, total=False):
 
     company: str
 
+    # =======================================================================
+    # Decision Gate (NEW)
+    # =======================================================================
+
+    retrieval_required: bool
+
+    normalized_issue: str
+
+    normalized_subject: str
+
+    routing_reason: str
+
+    confidence: float
+
     # ===========================================================================
     # Retrieval
     # ===========================================================================
@@ -34,6 +48,8 @@ class SupportState(TypedDict, total=False):
 
     # Plain text context used for evaluation / observability
     retrieved_context: list[str]
+
+    retrieved_chunks: list[RetrievedChunk]
 
     sources: list[SourceDocument]
 
@@ -46,6 +62,12 @@ class SupportState(TypedDict, total=False):
     # ===========================================================================
 
     warnings: list[str]
+    # ===========================================================================
+    # reranker
+    # ===========================================================================
+
+    reranker: str
+
     # =======================================================================
     # Output
     # =======================================================================

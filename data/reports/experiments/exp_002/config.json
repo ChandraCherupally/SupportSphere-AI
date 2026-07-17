@@ -1,0 +1,10 @@
+{
+    "provider": "OpenAI",
+    "model": "gpt-4o",
+    "search_mode": "Hybrid",
+    "reranker": "FlashRank",
+    "top_k": 10,
+    "runtime": 342.53257298469543,
+    "dataset": "eval_sample_support_tickets_ground_truth.csv",
+    "number_of_tickets": 10
+}

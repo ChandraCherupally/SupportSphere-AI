@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
+import src.config as src_config
 
-from src.config import (
-    BM25_TOP_K,
-    VECTOR_TOP_K,
-    FINAL_TOP_K,
-)
+logger = logging.getLogger(__name__)
 from src.retrieval.bm25_index import BM25Index
 from src.retrieval.vector_search import VectorSearch
 from src.retrieval.rank_fusion import ReciprocalRankFusion
+from src.retrieval.rerankers.factory import (
+    RerankerFactory,
+)
 
 
 class HybridSearch:
@@ -34,7 +35,7 @@ class HybridSearch:
     • Production simplicity
     """
 
-    def __init__(self):
+    def __init__(self,reranker: str = "none",):
 
         self.bm25 = BM25Index()
         self.bm25.load()
@@ -42,12 +43,14 @@ class HybridSearch:
         self.vector = VectorSearch()
 
         self.rrf = ReciprocalRankFusion()
+        self.reranker = RerankerFactory.create(reranker)
 
     def search(
         self,
         query: str,
         company: str | None = None,
         filters: dict[str, Any] | None = None,
+        clean_query: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Execute hybrid retrieval.
@@ -68,6 +71,10 @@ class HybridSearch:
         filters
             Additional metadata filters.
 
+        clean_query
+            A clean natural-language query (optional) without keyword stuffing.
+            Highly recommended for vector embeddings and reranking.
+
         Returns
         -------
         Ranked retrieval results.
@@ -85,9 +92,20 @@ class HybridSearch:
         # Better recall.
         # -------------------------------------------------------
 
+        # Get dynamic configuration variables
+        final_top_k = getattr(src_config, "FINAL_TOP_K", 10)
+        bm25_top_k = getattr(src_config, "BM25_TOP_K", 20)
+        vector_top_k = getattr(src_config, "VECTOR_TOP_K", 20)
+
+        # Scale intermediate top_k values to prevent bottlenecks in rerankers
+        bm25_top_k = max(bm25_top_k, final_top_k * 2)
+        vector_top_k = max(vector_top_k, final_top_k * 2)
+
+        logger.info(f"Executing retrieval for query: '{query}' | Company: '{company}' | Configured Top-K: {final_top_k}")
+
         bm25_results = self.bm25.search(
             query=query,
-            top_k=BM25_TOP_K,
+            top_k=bm25_top_k,
             company=company,
         )
 
@@ -99,8 +117,8 @@ class HybridSearch:
         # -------------------------------------------------------
 
         vector_results = self.vector.search(
-            query=query,
-            top_k=VECTOR_TOP_K,
+            query=clean_query or query,
+            top_k=vector_top_k,
             filters=vector_filters,
         )
 
@@ -109,7 +127,16 @@ class HybridSearch:
             vector=vector_results,
         )
 
-        return fused[:FINAL_TOP_K]
+        reranked = self.reranker.rerank(
+            query=clean_query or query,
+            results=fused,
+            top_k=final_top_k,
+        )
+
+        logger.info(f"Retrieval complete. Fused and reranked to {len(reranked)} chunks.")
+        return reranked
+
+
 
     @staticmethod
     def _build_filters(

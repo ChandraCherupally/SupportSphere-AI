@@ -1,0 +1,36 @@
+==============================================================================
+                     SUPPORTSPHERE AI EVALUATION REPORT                       
+==============================================================================
+Strategy Used:        Groq_llama-3.3-70b-versatile_Hybrid_None_5
+LLM Provider:         GROQ
+LLM Model:            llama-3.3-70b-versatile
+Retrieval Mode:       HYBRID
+Reranker Type:        None
+Top-K Chunks:         5
+Total Tickets:        5
+Avg Chunks Retrieved: 2.80
+Avg Latency (sec):    6.84s
+Total Runtime (sec):  223.98s
+------------------------------------------------------------------------------
+                             CLASSIFICATION ACCURACIES                        
+------------------------------------------------------------------------------
+Request Type Classification Accuracy:  100.00%
+Product Area Classification Accuracy:  80.00%
+Status Triage Classification Accuracy:  100.00%
+------------------------------------------------------------------------------
+                             ROUTING ACCURACIES                               
+------------------------------------------------------------------------------
+Retrieval Decision Accuracy:           100.00%
+Escalation Decision Accuracy:          100.00%
+Out-of-Scope Decision Accuracy:        100.00%
+Greeting Decision Accuracy:            100.00%
+Retrieval Skip Rate:                   40.00%
+------------------------------------------------------------------------------
+                             RAGAS METRICS PERFORMANCE                        
+------------------------------------------------------------------------------
+Avg Context Precision:  0.0000
+Avg Context Recall:     0.4762
+Avg Faithfulness:       0.0000
+Avg Answer Correctness: 0.0000
+Avg Answer Relevancy:   0.5253
+==============================================================================

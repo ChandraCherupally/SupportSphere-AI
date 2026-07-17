@@ -35,16 +35,34 @@ class SupportAgent:
             "issue": ticket.issue.strip(),
             "subject": ticket.subject.strip(),
             "company": ticket.company.strip(),
+            "reranker": ticket.reranker,
+            # Initialize empty defaults for safety
+            "context": [],
+            "retrieved_context": [],
+            "retrieved_chunks": [],
+            "sources": [],
+            "num_chunks": 0,
+            "token_estimate": 0,
+            "warnings": [],
+            "retrieval_required": True,
+            "normalized_issue": ticket.issue.strip(),
+            "normalized_subject": ticket.subject.strip(),
+            "routing_reason": "",
+            "confidence": 1.0,
         }
 
         result = self.graph.invoke(state)
-        
+
         return AgentResponse(
             response=result["response"],
             sources=result.get("sources", []),
-            retrieved_context=result.get("retrieved_context",[],),
+            retrieved_context=result.get("retrieved_context", []),
+            retrieved_chunks=result.get("retrieved_chunks", []),
             num_chunks=result.get("num_chunks", 0),
             token_estimate=result.get("token_estimate", 0),
+            retrieval_required=result.get("retrieval_required", True),
+            normalized_issue=result.get("normalized_issue", ""),
+            normalized_subject=result.get("normalized_subject", ""),
+            routing_reason=result.get("routing_reason", ""),
+            confidence=result.get("confidence", 1.0),
         )
-
-

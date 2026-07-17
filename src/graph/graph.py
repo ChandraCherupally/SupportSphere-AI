@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph, START, END
 
 from src.graph.nodes import (
     input_check_node,
+    decision_gate_node,
     retrieve_node,
     retrieval_check_node,
     generate_node,
@@ -24,10 +25,11 @@ def build_graph():
       Input Check
           │
           ▼
-       Retrieve
-          │
-          ▼
-    Retrieval Check
+     Decision Gate
+        ├── Retrieval Required
+        │      → Retrieve
+        │      → Retrieval Check
+        └── Retrieval Not Required
           │
           ▼
        Generate
@@ -41,61 +43,43 @@ def build_graph():
 
     workflow = StateGraph(SupportState)
 
-    workflow.add_node(
-        "input_check",
-        input_check_node,
-    )
-
-    workflow.add_node(
-        "retrieve",
-        retrieve_node,
-    )
-
-    workflow.add_node(
-        "retrieval_check",
-        retrieval_check_node,
-    )
-
-    workflow.add_node(
-        "generate",
-        generate_node,
-    )
-
-    workflow.add_node(
-        "output_check",
-        output_check_node,
-    )
+    workflow.add_node("input_check", input_check_node)
+    workflow.add_node("decision_gate", decision_gate_node)
+    workflow.add_node("retrieve", retrieve_node)
+    workflow.add_node("retrieval_check", retrieval_check_node)
+    workflow.add_node("generate", generate_node)
+    workflow.add_node("output_check", output_check_node)
 
     # Wire nodes
-    workflow.add_edge(
-        START,
-        "input_check",
+    
+    workflow.add_edge(START, "input_check")
+    workflow.add_edge("input_check", "decision_gate")
+
+    # Route conditionally after Decision Gate
+    def route_after_decision(state: SupportState) -> str:
+        if state.get("retrieval_required", True):
+            return "retrieve"
+        return "generate"
+
+    workflow.add_conditional_edges(
+        "decision_gate",
+        route_after_decision,
+        {
+            "retrieve": "retrieve",
+            "generate": "generate",
+        }
     )
 
-    workflow.add_edge(
-        "input_check",
-        "retrieve",
-    )
+    workflow.add_edge("retrieve", "retrieval_check")
+    workflow.add_edge("retrieval_check", "generate")
+    workflow.add_edge("generate", "output_check")
+    workflow.add_edge("output_check", END)
 
-    workflow.add_edge(
-        "retrieve",
-        "retrieval_check",
-    )
-
-    workflow.add_edge(
-        "retrieval_check",
-        "generate",
-    )
-
-    workflow.add_edge(
-        "generate",
-        "output_check",
-    )
-
-    workflow.add_edge(
-        "output_check",
-        END,
-    )
+    """
+    workflow.add_edge(START,"retrieve")
+    workflow.add_edge("retrieve","generate")
+    workflow.add_edge("generate",END)
+    """
 
     return workflow.compile()
 

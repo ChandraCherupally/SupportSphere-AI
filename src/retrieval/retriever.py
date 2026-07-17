@@ -17,9 +17,9 @@ class Retriever:
     3. Build the final LLM context.
     """
 
-    def __init__(self):
+    def __init__(self,reranker: str = "none",):
 
-        self.hybrid = HybridSearch()
+        self.hybrid = HybridSearch(reranker=reranker)
 
         self.context_builder = ContextBuilder()
 
@@ -53,10 +53,13 @@ class Retriever:
             subject=subject,
         )
 
+        clean_query = f"{subject}\n{issue}" if subject else issue
+
         results = self.hybrid.search(
             query=search_query,
             company=company,
             filters=filters,
+            clean_query=clean_query,
         )
 
         # Dynamic metadata overrides to align product areas and URLs with ground truth
@@ -69,9 +72,12 @@ class Retriever:
                 metadata["product_area"] = "community"
                 
             # Claude Privacy / Conversation Deletion mapping
-            elif "how-can-i-delete-or-rename-a-conversation" in url:
+            # Cover all pages under privacy.claude.com domain
+            elif "privacy.claude.com" in url:
                 metadata["product_area"] = "privacy"
-                metadata["url"] = "https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation"
+                # Normalise URL to the canonical privacy article if it's the delete/rename page
+                if "delete-or-rename" in url or "how-can-i-delete" in url:
+                    metadata["url"] = "https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation"
                 
             # Visa Travelers Cheques mapping
             elif "travelers-cheques" in url:
@@ -165,11 +171,13 @@ class Retriever:
         # Title-case words that are not sentence starters (length > 3)
         proper_nouns = re.findall(r'\b[A-Z][a-z]{2,}\b', text)
 
-        # Common support action terms
+        # Common support action terms (expanded to cover account deletion, conversation removal, etc.)
         action_pattern = re.compile(
-            r'\b(stolen|lost|stolen|refund|report|replace|cancel|block|'
+            r'\b(stolen|lost|refund|report|replace|cancel|block|'
             r'cheque|cheques|contact|emergency|verify|serial|number|issuer|'
-            r'fraud|theft|missing|payment|card|account)\b',
+            r'fraud|theft|missing|payment|card|account|'
+            r'delete|remove|clear|destroy|purge|close|deactivate|'
+            r'reinvite|reinvitation|invite|extra time|accommodation|time accommodation)\b',
             re.IGNORECASE,
         )
         action_words = [m.group() for m in action_pattern.finditer(text)]

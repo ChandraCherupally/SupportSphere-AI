@@ -1,0 +1,208 @@
+{
+    "metadata": {
+        "provider": "Groq",
+        "model": "llama-3.3-70b-versatile",
+        "search_mode": "Hybrid",
+        "reranker": "None",
+        "top_k": 5,
+        "strategy_used": "Groq_llama-3.3-70b-versatile_Hybrid_None_5",
+        "total_tickets": 5,
+        "elapsed_time_seconds": 223.97793316841125,
+        "avg_latency_seconds": 6.843155740003567,
+        "avg_chunks_retrieved": 2.8,
+        "retrieval_skip_rate": 0.4,
+        "evaluation_error": null
+    },
+    "classification": {
+        "request_type": {
+            "accuracy": 1.0,
+            "precision_macro": 1.0,
+            "recall_macro": 1.0,
+            "f1_macro": 1.0,
+            "precision_weighted": 1.0,
+            "recall_weighted": 1.0,
+            "f1_weighted": 1.0,
+            "confusion_matrix": [
+                [
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    3
+                ]
+            ],
+            "per_label_metrics": {
+                "bug": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                },
+                "invalid": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                },
+                "product_issue": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 3.0
+                }
+            }
+        },
+        "product_area": {
+            "accuracy": 0.8,
+            "precision_macro": 0.6666666666666666,
+            "recall_macro": 0.6666666666666666,
+            "f1_macro": 0.6666666666666666,
+            "precision_weighted": 0.8,
+            "recall_weighted": 0.8,
+            "f1_weighted": 0.8,
+            "confusion_matrix": [
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ],
+            "per_label_metrics": {
+                "": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                },
+                "claude": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1_score": 0.0,
+                    "support": 0.0
+                },
+                "community": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                },
+                "conversation_management": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                },
+                "privacy": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1_score": 0.0,
+                    "support": 1.0
+                },
+                "travel_support": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                }
+            }
+        },
+        "status": {
+            "accuracy": 1.0,
+            "precision_macro": 1.0,
+            "recall_macro": 1.0,
+            "f1_macro": 1.0,
+            "precision_weighted": 1.0,
+            "recall_weighted": 1.0,
+            "f1_weighted": 1.0,
+            "confusion_matrix": [
+                [
+                    1,
+                    0
+                ],
+                [
+                    0,
+                    4
+                ]
+            ],
+            "per_label_metrics": {
+                "Escalated": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 1.0
+                },
+                "Replied": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1_score": 1.0,
+                    "support": 4.0
+                }
+            }
+        }
+    },
+    "routing": {
+        "retrieval_decision_accuracy": 1.0,
+        "escalation_accuracy": 1.0,
+        "out_of_scope_accuracy": 1.0,
+        "greeting_accuracy": 1.0,
+        "retrieval_skip_rate": 0.4
+    },
+    "ragas": {
+        "avg_context_precision": 0.0,
+        "avg_context_recall": 0.4761904761904762,
+        "avg_faithfulness": 0.0,
+        "avg_answer_correctness": 0.0,
+        "avg_answer_relevancy": 0.525296913456518
+    }
+}

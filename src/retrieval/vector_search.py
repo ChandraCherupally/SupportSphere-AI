@@ -13,7 +13,7 @@ class VectorSearch:
 
 
     def search(self, query: str, top_k: int = 20, filters: dict | None = None):
-        client = genai.Client(api_key=config.GOOGLE_API_KEY)
+        client = genai.Client(api_key=config.GOOGLE_API_KEY_EMBED)
         embedding = client.models.embed_content(
             model=config.EMBEDDING_MODEL,
             contents=query,
