@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import src.config as src_config
 from evaluation.classification.evaluator import ClassificationEvaluator
 from evaluation.dataset import DatasetLoader
+from evaluation.models import BillingMetrics
 from evaluation.models import ClassificationPrediction
 from evaluation.models import EvaluationResult
 from evaluation.models import EvaluationSample
@@ -20,6 +21,9 @@ from evaluation.models import RagasMetrics
 from evaluation.ragas.evaluator import RagasEvaluator
 from evaluation.reports import generate_reports
 from src.ai.models import SupportTicket
+from src.billing.calculator import BillingCalculator
+from src.billing.catalog import get_catalog_snapshot
+from src.billing.models import TokenUsage
 from src.graph.support_agent import SupportAgent
 
 logger = logging.getLogger(__name__)
@@ -211,6 +215,16 @@ class EvaluationRunner:
         results: List[EvaluationResult] = []
         predictions: List[ClassificationPrediction] = []
 
+        # Initialize billing calculator
+        billing_calc = BillingCalculator(
+            provider=provider,
+            model=model_name,
+            embedding_provider=getattr(src_config, "EMBEDDING_PROVIDER", "google"),
+            embedding_model=getattr(src_config, "EMBEDDING_MODEL", "gemini-embedding-001"),
+            reranker=reranker,
+        )
+        ticket_costs = []
+
         logger.info(f"Gathering predictions from SupportAgent for {len(samples)} tickets.")
         for idx, sample in enumerate(samples):
             if progress_callback:
@@ -241,6 +255,39 @@ class EvaluationRunner:
                 agent_res = AgentResponse(response=resp, retrieved_context=[], retrieved_chunks=[], num_chunks=0)
                 
             t_elapsed = time.perf_counter() - t_start
+
+            # Calculate billing cost for this ticket
+            decision_usage = TokenUsage(
+                input_tokens=agent_res.decision_input_tokens,
+                output_tokens=agent_res.decision_output_tokens,
+            )
+            generation_usage = TokenUsage(
+                input_tokens=agent_res.generation_input_tokens,
+                output_tokens=agent_res.generation_output_tokens,
+            )
+            ticket_cost = billing_calc.calculate_ticket_cost(
+                decision_usage=decision_usage,
+                generation_usage=generation_usage,
+                embedding_tokens=0,  # Query embedding tokens not separately tracked yet
+                retrieval_required=agent_res.retrieval_required,
+            )
+            ticket_costs.append(ticket_cost)
+
+            billing_metrics = BillingMetrics(
+                decision_cost=ticket_cost.decision_cost,
+                embedding_cost=ticket_cost.embedding_cost,
+                retriever_cost=ticket_cost.retriever_cost,
+                reranker_cost=ticket_cost.reranker_cost,
+                generation_cost=ticket_cost.generation_cost,
+                total_cost=ticket_cost.total_cost,
+                decision_input_tokens=ticket_cost.decision_input_tokens,
+                decision_output_tokens=ticket_cost.decision_output_tokens,
+                generation_input_tokens=ticket_cost.generation_input_tokens,
+                generation_output_tokens=ticket_cost.generation_output_tokens,
+                total_input_tokens=ticket_cost.total_input_tokens,
+                total_output_tokens=ticket_cost.total_output_tokens,
+                total_tokens=ticket_cost.total_tokens,
+            )
 
             # Calculate classification checks
             predicted_type = str(agent_res.response.request_type)
@@ -275,6 +322,7 @@ class EvaluationRunner:
                     normalized_subject=agent_res.normalized_subject,
                     routing_reason=agent_res.routing_reason,
                     confidence=agent_res.confidence,
+                    billing=billing_metrics,
                 )
             )
 
@@ -425,6 +473,9 @@ class EvaluationRunner:
         correct = [s.answer_correctness for s in ragas_scores if s.answer_correctness is not None]
         relevancy = [s.answer_relevancy for s in ragas_scores if s.answer_relevancy is not None]
 
+        # Aggregate billing across all tickets
+        exp_cost_summary = billing_calc.calculate_experiment_totals(ticket_costs)
+
         summary = EvaluationSummary(
             total_tickets=len(results),
             avg_latency=avg_latency,
@@ -457,6 +508,13 @@ class EvaluationRunner:
             reranker=reranker,
             top_k=top_k,
             evaluation_error=evaluation_error_str,
+
+            # Billing aggregates
+            avg_cost_per_ticket=exp_cost_summary.avg_cost_per_ticket,
+            total_experiment_cost=exp_cost_summary.total_cost,
+            avg_input_tokens=exp_cost_summary.avg_input_tokens,
+            avg_output_tokens=exp_cost_summary.avg_output_tokens,
+            avg_total_tokens=exp_cost_summary.avg_total_tokens,
         )
 
         # 7. Write CSV, JSON, and Human-Readable TXT reports
@@ -474,37 +532,55 @@ class EvaluationRunner:
                     existing_index = json.load(f)
             except Exception as e:
                 logger.error(f"Failed to load index.json: {e}")
-                
-        # Find next id
+
+        # Find next sequential number — supports both EXP-XXXX and legacy exp_XXX formats
         next_num = 1
         for item in existing_index:
             try:
                 exp_id = item.get("id", "")
-                if exp_id.startswith("exp_"):
+                if exp_id.upper().startswith("EXP-"):
+                    num = int(exp_id.split("-")[1])
+                elif exp_id.startswith("exp_"):
                     num = int(exp_id.split("_")[1])
-                    if num >= next_num:
-                        next_num = num + 1
+                else:
+                    continue
+                if num >= next_num:
+                    next_num = num + 1
             except Exception:
                 pass
-                
+
         for path in experiments_dir.iterdir():
-            if path.is_dir() and path.name.startswith("exp_"):
+            if path.is_dir():
+                name = path.name
                 try:
-                    num = int(path.name.split("_")[1])
+                    if name.upper().startswith("EXP-"):
+                        num = int(name.split("-")[1])
+                    elif name.startswith("exp_"):
+                        num = int(name.split("_")[1])
+                    else:
+                        continue
                     if num >= next_num:
                         next_num = num + 1
                 except Exception:
                     pass
-                    
-        experiment_id = f"exp_{next_num:03d}"
+
+        experiment_id = f"EXP-{next_num:04d}"
+        # Human-friendly name: e.g. "Google | Gemini-2.5-Flash-Lite | Hybrid | FlashRank | TopK=5"
+        friendly_name = (
+            f"{provider.title()} | {model_name.title()} | "
+            f"{search_mode.title()} | {reranker.title()} | TopK={top_k}"
+        )
+
         strategy_dir = experiments_dir / experiment_id
         strategy_dir.mkdir(parents=True, exist_ok=True)
         
-        logger.info(f"Saving run reports for {experiment_id} to directory: {strategy_dir}")
+        logger.info(f"Saving run reports for {experiment_id} ('{friendly_name}') to: {strategy_dir}")
         generate_reports(results, summary, strategy_dir)
         
         # Save config.json snapshot
         config_snapshot = {
+            "experiment_id": experiment_id,
+            "friendly_name": friendly_name,
             "provider": provider,
             "model": model_name,
             "search_mode": search_mode,
@@ -512,25 +588,44 @@ class EvaluationRunner:
             "top_k": top_k,
             "runtime": elapsed_total,
             "dataset": Path(dataset_path).name,
-            "number_of_tickets": len(results)
+            "number_of_tickets": len(results),
         }
         try:
             with open(strategy_dir / "config.json", "w", encoding="utf-8") as f:
                 json.dump(config_snapshot, f, indent=4)
         except Exception as snap_err:
             logger.error(f"Failed to save config.json snapshot: {snap_err}")
+
+        # Save pricing_snapshot.json so historical cost calculations remain reproducible
+        try:
+            pricing_snap = get_catalog_snapshot()
+            with open(strategy_dir / "pricing_snapshot.json", "w", encoding="utf-8") as f:
+                json.dump(pricing_snap, f, indent=4)
+        except Exception as price_err:
+            logger.error(f"Failed to save pricing_snapshot.json: {price_err}")
             
         # Update index registry index.json
         now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        summary_path = str(strategy_dir / "summary.json")
+        csv_path = str(strategy_dir / "evaluation_report.csv")
         new_registry_entry = {
             "id": experiment_id,
+            "friendly_name": friendly_name,
             "timestamp": now_str,
             "provider": provider,
             "model": model_name,
             "search_mode": search_mode,
             "reranker": reranker,
             "top_k": top_k,
-            "report_path": f"data/reports/experiments/{experiment_id}"
+            "dataset": Path(dataset_path).name,
+            "total_tickets": len(results),
+            "elapsed_time": round(elapsed_total, 2),
+            "avg_cost_per_ticket": exp_cost_summary.avg_cost_per_ticket,
+            "total_cost": exp_cost_summary.total_cost,
+            "pricing_version": get_catalog_snapshot()["pricing_version"],
+            "summary_path": summary_path,
+            "csv_path": csv_path,
+            "report_path": f"data/reports/experiments/{experiment_id}",
         }
         existing_index.append(new_registry_entry)
         try:

@@ -86,6 +86,18 @@ def generate_reports(
             "ragas_faithfulness": r.ragas_metrics.faithfulness,
             "ragas_answer_correctness": r.ragas_metrics.answer_correctness,
             "ragas_answer_relevancy": r.ragas_metrics.answer_relevancy,
+
+            # Billing metrics
+            "billing_total_cost": r.billing.total_cost,
+            "billing_decision_cost": r.billing.decision_cost,
+            "billing_embedding_cost": r.billing.embedding_cost,
+            "billing_retriever_cost": r.billing.retriever_cost,
+            "billing_generation_cost": r.billing.generation_cost,
+            "billing_decision_input_tokens": r.billing.decision_input_tokens,
+            "billing_decision_output_tokens": r.billing.decision_output_tokens,
+            "billing_generation_input_tokens": r.billing.generation_input_tokens,
+            "billing_generation_output_tokens": r.billing.generation_output_tokens,
+            "billing_total_tokens": r.billing.total_tokens,
         })
 
     df = pd.DataFrame(rows)
@@ -146,6 +158,13 @@ def generate_reports(
             "avg_faithfulness": summary.avg_faithfulness,
             "avg_answer_correctness": summary.avg_answer_correctness,
             "avg_answer_relevancy": summary.avg_answer_relevancy,
+        },
+        "billing": {
+            "avg_cost_per_ticket": summary.avg_cost_per_ticket,
+            "total_experiment_cost": summary.total_experiment_cost,
+            "avg_input_tokens": summary.avg_input_tokens,
+            "avg_output_tokens": summary.avg_output_tokens,
+            "avg_total_tokens": summary.avg_total_tokens,
         }
     }
 

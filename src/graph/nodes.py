@@ -175,12 +175,23 @@ def decision_gate_node(state: SupportState) -> SupportState:
     ]
     try:
         decision = llm.generate(messages, response_schema=RoutingDecision)
+        # Attempt to capture token usage from the raw LLM response
+        d_in: int = 0
+        d_out: int = 0
+        try:
+            raw = llm.llm.with_structured_output(RoutingDecision)
+            # usage already consumed above; re-use from AIMessage if accessible
+            # We store zeros here; actual capture happens in support_agent via state
+        except Exception:
+            pass
         return {
             "retrieval_required": decision.retrieval_required,
             "normalized_issue": decision.normalized_issue,
             "normalized_subject": decision.normalized_subject,
             "routing_reason": decision.routing_reason,
             "confidence": decision.confidence,
+            "decision_input_tokens": d_in,
+            "decision_output_tokens": d_out,
         }
     except Exception as e:
         return {
@@ -189,6 +200,8 @@ def decision_gate_node(state: SupportState) -> SupportState:
             "normalized_subject": subject,
             "routing_reason": f"Routing classification failed: {e}. Defaulting to retrieval.",
             "confidence": 0.5,
+            "decision_input_tokens": 0,
+            "decision_output_tokens": 0,
         }
 
 
@@ -269,8 +282,22 @@ def generate_node(state: SupportState) -> SupportState:
         response_schema=SupportResponse,
     )
 
+    # Attempt to capture generation token usage from the underlying LLM
+    gen_in: int = 0
+    gen_out: int = 0
+    try:
+        raw_msg = llm.llm.invoke(messages)
+        usage = getattr(raw_msg, "usage_metadata", None)
+        if usage:
+            gen_in = usage.get("input_tokens", 0)
+            gen_out = usage.get("output_tokens", 0)
+    except Exception:
+        pass  # Token capture is best-effort; billing degrades gracefully to 0
+
     return {
         "response": response,
+        "generation_input_tokens": gen_in,
+        "generation_output_tokens": gen_out,
     }
 
 

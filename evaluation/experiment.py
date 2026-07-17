@@ -58,59 +58,71 @@ class ExperimentManager:
                 
             if not summary_path.exists():
                 continue
-                
+
             try:
                 with open(summary_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    
+
                 meta = data.get("metadata", {})
                 ragas = data.get("ragas", {})
                 req_type = data.get("classification", {}).get("request_type", {})
                 prod_area = data.get("classification", {}).get("product_area", {})
                 status = data.get("classification", {}).get("status", {})
                 routing = data.get("routing", {})
-                
+                billing = data.get("billing", {})
+
                 experiments.append({
                     "id": exp_id,
                     "timestamp": item.get("timestamp", "unknown"),
+                    "friendly_name": item.get("friendly_name", meta.get("strategy_used", exp_id)),
                     "strategy_used": meta.get("strategy_used", exp_id),
                     "provider": item.get("provider", meta.get("provider", "unknown")),
                     "model": item.get("model", meta.get("model", "unknown")),
                     "search_mode": item.get("search_mode", meta.get("search_mode", "unknown")),
                     "reranker": item.get("reranker", meta.get("reranker", "unknown")),
                     "top_k": item.get("top_k", meta.get("top_k", 0)),
-                    "total_tickets": meta.get("total_tickets", 0),
-                    "elapsed_time": meta.get("elapsed_time_seconds", 0.0),
+                    "dataset": item.get("dataset", meta.get("dataset", "unknown")),
+                    "total_tickets": item.get("total_tickets", meta.get("total_tickets", 0)),
+                    "elapsed_time": item.get("elapsed_time", meta.get("elapsed_time_seconds", 0.0)),
                     "avg_latency": meta.get("avg_latency_seconds", 0.0),
                     "avg_chunks": meta.get("avg_chunks_retrieved", 0.0),
-                    
+
                     # Accuracies
                     "request_type_accuracy": req_type.get("accuracy", 0.0),
                     "product_area_accuracy": prod_area.get("accuracy", 0.0),
                     "status_accuracy": status.get("accuracy", 0.0),
-                    
+
                     # Routing
                     "retrieval_decision_accuracy": routing.get("retrieval_decision_accuracy", 1.0),
                     "escalation_accuracy": routing.get("escalation_accuracy", 1.0),
                     "out_of_scope_accuracy": routing.get("out_of_scope_accuracy", 1.0),
                     "greeting_accuracy": routing.get("greeting_accuracy", 1.0),
                     "retrieval_skip_rate": routing.get("retrieval_skip_rate", 0.0),
-                    
+
                     # Ragas Scores
                     "context_precision": ragas.get("avg_context_precision"),
                     "context_recall": ragas.get("avg_context_recall"),
                     "faithfulness": ragas.get("avg_faithfulness"),
                     "answer_correctness": ragas.get("avg_answer_correctness"),
                     "answer_relevancy": ragas.get("avg_answer_relevancy"),
-                    
+
+                    # Billing
+                    "avg_cost_per_ticket": item.get("avg_cost_per_ticket", billing.get("avg_cost_per_ticket", 0.0)),
+                    "total_cost": item.get("total_cost", billing.get("total_experiment_cost", 0.0)),
+                    "avg_input_tokens": billing.get("avg_input_tokens", 0.0),
+                    "avg_output_tokens": billing.get("avg_output_tokens", 0.0),
+                    "avg_total_tokens": billing.get("avg_total_tokens", 0.0),
+                    "pricing_version": item.get("pricing_version", "unknown"),
+
                     "summary_json_path": summary_path.absolute(),
                     "report_csv_path": report_dir / "evaluation_report.csv",
                     "evaluation_error": meta.get("evaluation_error"),
                 })
             except Exception as e:
                 logger.error(f"Failed to load experiment {exp_id} summary: {e}")
-                
+
         return experiments
+
 
     def delete_experiment(self, experiment_id: str) -> bool:
         """

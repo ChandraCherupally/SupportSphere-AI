@@ -49,6 +49,11 @@ class SupportAgent:
             "normalized_subject": ticket.subject.strip(),
             "routing_reason": "",
             "confidence": 1.0,
+            # Token usage defaults for billing
+            "decision_input_tokens": 0,
+            "decision_output_tokens": 0,
+            "generation_input_tokens": 0,
+            "generation_output_tokens": 0,
         }
 
         result = self.graph.invoke(state)
@@ -65,4 +70,8 @@ class SupportAgent:
             normalized_subject=result.get("normalized_subject", ""),
             routing_reason=result.get("routing_reason", ""),
             confidence=result.get("confidence", 1.0),
+            decision_input_tokens=result.get("decision_input_tokens", 0),
+            decision_output_tokens=result.get("decision_output_tokens", 0),
+            generation_input_tokens=result.get("generation_input_tokens", 0),
+            generation_output_tokens=result.get("generation_output_tokens", 0),
         )

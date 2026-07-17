@@ -66,6 +66,29 @@ class RagasMetrics:
 
 
 @dataclass
+class BillingMetrics:
+    """
+    Runtime inference cost breakdown for a single support ticket.
+
+    All costs are in USD. Token counts reflect actual LLM usage_metadata where
+    available; otherwise they default to 0 (best-effort capture).
+    """
+    decision_cost: float = 0.0
+    embedding_cost: float = 0.0
+    retriever_cost: float = 0.0
+    reranker_cost: float = 0.0
+    generation_cost: float = 0.0
+    total_cost: float = 0.0
+    decision_input_tokens: int = 0
+    decision_output_tokens: int = 0
+    generation_input_tokens: int = 0
+    generation_output_tokens: int = 0
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass
 class EvaluationResult:
     """
     Complete evaluation details for a single ticket execution.
@@ -77,13 +100,16 @@ class EvaluationResult:
     ragas_metrics: RagasMetrics
     latency: float
     num_chunks: int
-    
-    # Decision Gate fields (NEW)
+
+    # Decision Gate fields
     retrieval_required: bool = True
     normalized_issue: str = ""
     normalized_subject: str = ""
     routing_reason: str = ""
     confidence: float = 1.0
+
+    # Billing metrics
+    billing: BillingMetrics = field(default_factory=BillingMetrics)
 
 
 @dataclass(frozen=True)
@@ -95,26 +121,26 @@ class EvaluationSummary:
     avg_latency: float
     avg_chunks: float
     elapsed_time_seconds: float
-    
+
     # Classification
     request_type_metrics: ClassificationMetrics
     product_area_metrics: ClassificationMetrics
     status_metrics: ClassificationMetrics
-    
-    # Routing (NEW)
+
+    # Routing
     retrieval_decision_accuracy: float
     escalation_accuracy: float
     out_of_scope_accuracy: float
     greeting_accuracy: float
     retrieval_skip_rate: float
-    
+
     # Ragas Averages
     avg_context_precision: Optional[float]
     avg_context_recall: Optional[float]
     avg_faithfulness: Optional[float]
     avg_answer_correctness: Optional[float]
     avg_answer_relevancy: Optional[float]
-    
+
     # Config details
     provider: str
     model: str
@@ -122,3 +148,10 @@ class EvaluationSummary:
     reranker: str
     top_k: int
     evaluation_error: Optional[str] = None
+
+    # Billing aggregates
+    avg_cost_per_ticket: float = 0.0
+    total_experiment_cost: float = 0.0
+    avg_input_tokens: float = 0.0
+    avg_output_tokens: float = 0.0
+    avg_total_tokens: float = 0.0

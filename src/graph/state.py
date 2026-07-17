@@ -72,4 +72,13 @@ class SupportState(TypedDict, total=False):
     # Output
     # =======================================================================
 
-    response: SupportResponse 
+    response: SupportResponse
+
+    # =======================================================================
+    # Token Usage (for Billing Engine)
+    # =======================================================================
+
+    decision_input_tokens: int
+    decision_output_tokens: int
+    generation_input_tokens: int
+    generation_output_tokens: int
