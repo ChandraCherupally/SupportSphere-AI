@@ -123,10 +123,52 @@ def render_single_ticket(cfg: AppConfig) -> None:
                 with c6:
                     st.write(f"**Routing Reason**:\n{res.routing_reason or 'None'}")
 
-                st.markdown("### Performance")
-                p1, p2 = st.columns(2)
+                # Calculate billing cost for this single ticket
+                from src.billing.calculator import BillingCalculator
+                from src.billing.models import TokenUsage
+                from src.streamlit_app.utils import fmt_cost
+                import src.config as src_config
+
+                billing_calc = BillingCalculator(
+                    provider=cfg.provider.lower(),
+                    model=cfg.selected_model,
+                    embedding_provider=getattr(src_config, "EMBEDDING_PROVIDER", "google"),
+                    embedding_model=getattr(src_config, "EMBEDDING_MODEL", "gemini-embedding-001"),
+                    reranker=cfg.reranker.lower(),
+                )
+                
+                decision_usage = TokenUsage(
+                    input_tokens=res.decision_input_tokens,
+                    output_tokens=res.decision_output_tokens,
+                )
+                generation_usage = TokenUsage(
+                    input_tokens=res.generation_input_tokens,
+                    output_tokens=res.generation_output_tokens,
+                )
+                
+                ticket_cost = billing_calc.calculate_ticket_cost(
+                    decision_usage=decision_usage,
+                    generation_usage=generation_usage,
+                    embedding_tokens=0,
+                    retrieval_required=res.retrieval_required,
+                )
+
+                st.markdown("### Performance & Token Billing")
+                p1, p2, p3 = st.columns(3)
                 p1.metric("Response Latency", f"{t_elapsed:.2f}s")
                 p2.metric("Retrieved Chunks Count", res.num_chunks)
+                p3.metric("Total Ticket Cost", fmt_cost(ticket_cost.total_cost))
+
+                st.markdown("#### Token Usage Details")
+                u1, u2, u3, u4 = st.columns(4)
+                u1.write(f"**Decision Input**: `{ticket_cost.decision_input_tokens}`")
+                u2.write(f"**Decision Output**: `{ticket_cost.decision_output_tokens}`")
+                u3.write(f"**Generation Input**: `{ticket_cost.generation_input_tokens}`")
+                u4.write(f"**Generation Output**: `{ticket_cost.generation_output_tokens}`")
+                
+                total_in = ticket_cost.decision_input_tokens + ticket_cost.generation_input_tokens
+                total_out = ticket_cost.decision_output_tokens + ticket_cost.generation_output_tokens
+                st.write(f"**Total Tokens**: `{total_in + total_out}` (Input: `{total_in}`, Output: `{total_out}`)")
 
                 show_active_retrieval_config(cfg, actual_retrieved=res.num_chunks)
 
@@ -177,6 +219,20 @@ def render_batch(cfg: AppConfig) -> None:
             agent = SupportAgent()
             outputs = []
 
+            # Initialize billing calculator for batch run
+            from src.billing.calculator import BillingCalculator
+            from src.billing.models import TokenUsage
+            from src.streamlit_app.utils import fmt_cost
+            import src.config as src_config
+
+            billing_calc = BillingCalculator(
+                provider=cfg.provider.lower(),
+                model=cfg.selected_model,
+                embedding_provider=getattr(src_config, "EMBEDDING_PROVIDER", "google"),
+                embedding_model=getattr(src_config, "EMBEDDING_MODEL", "gemini-embedding-001"),
+                reranker=cfg.reranker.lower(),
+            )
+
             p_bar = st.progress(0)
             status_text = st.empty()
             t_start = time.time()
@@ -198,6 +254,22 @@ def render_batch(cfg: AppConfig) -> None:
 
                 try:
                     res = agent.invoke(ticket)
+
+                    decision_usage = TokenUsage(
+                        input_tokens=res.decision_input_tokens,
+                        output_tokens=res.decision_output_tokens,
+                    )
+                    generation_usage = TokenUsage(
+                        input_tokens=res.generation_input_tokens,
+                        output_tokens=res.generation_output_tokens,
+                    )
+                    ticket_cost = billing_calc.calculate_ticket_cost(
+                        decision_usage=decision_usage,
+                        generation_usage=generation_usage,
+                        embedding_tokens=0,
+                        retrieval_required=res.retrieval_required,
+                    )
+
                     outputs.append({
                         "Issue": issue_val, "Subject": subj_val,
                         "Company": comp_val or "None",
@@ -206,6 +278,10 @@ def render_batch(cfg: AppConfig) -> None:
                         "Predicted Status": res.response.status,
                         "Generated Response": res.response.response,
                         "Num Chunks": res.num_chunks,
+                        "Input Tokens": ticket_cost.total_input_tokens,
+                        "Output Tokens": ticket_cost.total_output_tokens,
+                        "Total Tokens": ticket_cost.total_tokens,
+                        "Cost ($)": ticket_cost.total_cost,
                     })
                 except Exception as e:
                     logger.error("Failed prediction on batch item %d: %s", idx, e)
@@ -214,6 +290,10 @@ def render_batch(cfg: AppConfig) -> None:
                         "Predicted Request Type": "invalid", "Predicted Product Area": "General",
                         "Predicted Status": "Replied", "Generated Response": "Prediction failed.",
                         "Num Chunks": 0,
+                        "Input Tokens": 0,
+                        "Output Tokens": 0,
+                        "Total Tokens": 0,
+                        "Cost ($)": 0.0,
                     })
 
             t_elapsed = time.time() - t_start
@@ -224,9 +304,17 @@ def render_batch(cfg: AppConfig) -> None:
             st.session_state.batch_outputs = out_df
 
             st.markdown("### Batch Run Summary")
-            col1, col2 = st.columns(2)
-            col1.metric("Total Tickets Processed", len(out_df))
-            col2.metric("Total Runtime (seconds)", f"{t_elapsed:.2f}s")
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric("Total Tickets", len(out_df))
+            col2.metric("Total Runtime", f"{t_elapsed:.2f}s")
+
+            total_cost_val = out_df["Cost ($)"].sum()
+            avg_cost_val = out_df["Cost ($)"].mean()
+            avg_tokens_val = out_df["Total Tokens"].mean()
+
+            col3.metric("Total Cost", fmt_cost(total_cost_val))
+            col4.metric("Avg Cost / Ticket", fmt_cost(avg_cost_val))
+            col5.metric("Avg Tokens / Ticket", f"{avg_tokens_val:.1f}")
 
             avg_chunks = int(out_df["Num Chunks"].mean()) if len(out_df) > 0 else 0
             show_active_retrieval_config(cfg, actual_retrieved=avg_chunks)
@@ -239,3 +327,4 @@ def render_batch(cfg: AppConfig) -> None:
                 "Download Predictions CSV", data=csv_data,
                 file_name="triage_predictions.csv", mime="text/csv"
             )
+

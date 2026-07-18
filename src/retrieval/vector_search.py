@@ -15,7 +15,7 @@ class VectorSearch:
     def search(self, query: str, top_k: int = 20, filters: dict | None = None):
         # Prefer the dedicated embed key; fall back to the main API key so the
         # genai.Client never receives None (which triggers OAuth and a 401 error).
-        embed_api_key = config.GOOGLE_API_KEY
+        embed_api_key = config.GOOGLE_API_KEY_EMBED or config.GOOGLE_API_KEY
         client = genai.Client(api_key=embed_api_key)
         embedding = client.models.embed_content(
             model=config.EMBEDDING_MODEL,

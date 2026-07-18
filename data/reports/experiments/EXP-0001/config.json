@@ -1,0 +1,12 @@
+{
+    "experiment_id": "EXP-0001",
+    "friendly_name": "Google | Gemini-2.5-Flash-Lite | Hybrid | Flashrank | TopK=5",
+    "provider": "google",
+    "model": "gemini-2.5-flash-lite",
+    "search_mode": "hybrid",
+    "reranker": "flashrank",
+    "top_k": 5,
+    "runtime": 150.55668425559998,
+    "dataset": "eval_sample_support_tickets_ground_truth.csv",
+    "number_of_tickets": 10
+}

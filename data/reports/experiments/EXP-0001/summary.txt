@@ -1,0 +1,36 @@
+==============================================================================
+                     SUPPORTSPHERE AI EVALUATION REPORT                       
+==============================================================================
+Strategy Used:        google_gemini-2.5-flash-lite_hybrid_flashrank_5
+LLM Provider:         GOOGLE
+LLM Model:            gemini-2.5-flash-lite
+Retrieval Mode:       HYBRID
+Reranker Type:        Flashrank
+Top-K Chunks:         5
+Total Tickets:        10
+Avg Chunks Retrieved: 2.90
+Avg Latency (sec):    10.61s
+Total Runtime (sec):  150.56s
+------------------------------------------------------------------------------
+                             CLASSIFICATION ACCURACIES                        
+------------------------------------------------------------------------------
+Request Type Classification Accuracy:  100.00%
+Product Area Classification Accuracy:  90.00%
+Status Triage Classification Accuracy:  100.00%
+------------------------------------------------------------------------------
+                             ROUTING ACCURACIES                               
+------------------------------------------------------------------------------
+Retrieval Decision Accuracy:           100.00%
+Escalation Decision Accuracy:          100.00%
+Out-of-Scope Decision Accuracy:        100.00%
+Greeting Decision Accuracy:            100.00%
+Retrieval Skip Rate:                   30.00%
+------------------------------------------------------------------------------
+                             RAGAS METRICS PERFORMANCE                        
+------------------------------------------------------------------------------
+Avg Context Precision:  0.6327
+Avg Context Recall:     0.7663
+Avg Faithfulness:       0.9263
+Avg Answer Correctness: 0.6080
+Avg Answer Relevancy:   0.8181
+==============================================================================

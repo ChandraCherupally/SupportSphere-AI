@@ -104,6 +104,23 @@ def _get_langchain_models(
                     res = self._clean_json(res)
                 return res
 
+            async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
+                result = await super()._agenerate(messages, stop=stop, run_manager=run_manager, **kwargs)
+                for gen in result.generations:
+                    if hasattr(gen, "message") and hasattr(gen.message, "content"):
+                        gen.message.content = self._clean_json(gen.message.content)
+                    elif hasattr(gen, "text"):
+                        gen.text = self._clean_json(gen.text)
+                return result
+
+            async def ainvoke(self, input, config=None, **kwargs):
+                res = await super().ainvoke(input, config=config, **kwargs)
+                if hasattr(res, "content") and isinstance(res.content, str):
+                    res.content = self._clean_json(res.content)
+                elif isinstance(res, str):
+                    res = self._clean_json(res)
+                return res
+
         model_instance.__class__ = CleanModel
         return model_instance
 
