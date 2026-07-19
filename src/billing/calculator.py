@@ -1,8 +1,7 @@
 """
 Billing calculator for SupportSphere AI.
-
-Calculates per-ticket inference cost from token usage data and
-aggregates cost metrics across a full evaluation experiment.
+Calculates per-ticket inference cost from token usage data.
+Aggregates cost metrics across a full evaluation experiment.
 """
 
 from __future__ import annotations
@@ -29,94 +28,65 @@ _TOKENS_PER_MILLION: float = 1_000_000.0
 class BillingCalculator:
     """Calculates inference cost for the SupportSphere AI pipeline.
 
-    Supports cost calculation for:
-    - Decision Gate LLM call
-    - Query embedding
-    - Vector database (Pinecone) query
-    - Reranker (FlashRank and CrossEncoder are free; LLM reranker billed)
-    - Generation LLM call
-
-    Args:
-        provider: LLM provider name (e.g. "google", "openai", "groq").
-        model: LLM model name.
-        embedding_provider: Embedding provider name.
-        embedding_model: Embedding model name.
-        reranker: Active reranker type ("none", "flashrank", "cross_encoder", "llm").
+    Supports stage-aware pricing for Decision and Generation models.
     """
 
     def __init__(
         self,
-        provider: str,
-        model: str,
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
         embedding_provider: str = "google",
         embedding_model: str = "gemini-embedding-001",
         reranker: str = "none",
+        decision_provider: Optional[str] = None,
+        decision_model: Optional[str] = None,
+        generation_provider: Optional[str] = None,
+        generation_model: Optional[str] = None,
     ) -> None:
-        self._provider = provider.lower()
-        self._model = model.lower()
         self._embedding_provider = embedding_provider.lower()
         self._embedding_model = embedding_model.lower()
         self._reranker = reranker.lower()
 
-        self._llm_price = get_model_price(self._provider, self._model)
-        self._emb_price = get_embedding_price(
-            self._embedding_provider, self._embedding_model
-        )
+        # Fallback resolves
+        self._decision_provider = (decision_provider or provider or "google").lower()
+        self._decision_model = (decision_model or model or "gemini-2.5-flash-lite").lower()
+        self._generation_provider = (generation_provider or provider or "google").lower()
+        self._generation_model = (generation_model or model or "gemini-2.5-flash").lower()
 
-        if self._llm_price is None:
+        # Load stage prices
+        self._decision_price = get_model_price(self._decision_provider, self._decision_model)
+        self._generation_price = get_model_price(self._generation_provider, self._generation_model)
+        self._emb_price = get_embedding_price(self._embedding_provider, self._embedding_model)
+
+        if self._decision_price is None:
             logger.warning(
-                "No billing price found for provider=%s model=%s. "
-                "LLM costs will be reported as 0.0.",
-                self._provider,
-                self._model,
+                "No billing price found for decision stage: provider=%s model=%s. Costs will be 0.0.",
+                self._decision_provider, self._decision_model
+            )
+        if self._generation_price is None:
+            logger.warning(
+                "No billing price found for generation stage: provider=%s model=%s. Costs will be 0.0.",
+                self._generation_provider, self._generation_model
             )
         if self._emb_price is None:
             logger.warning(
-                "No billing price found for embedding provider=%s model=%s. "
-                "Embedding costs will be reported as 0.0.",
-                self._embedding_provider,
-                self._embedding_model,
+                "No billing price found for embedding provider=%s model=%s. Costs will be 0.0.",
+                self._embedding_provider, self._embedding_model
             )
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
-
-    def _llm_cost(self, usage: Optional[TokenUsage]) -> float:
-        """Calculate LLM cost for a single call from token usage.
-
-        Args:
-            usage: Token usage from the LLM call, or None.
-
-        Returns:
-            USD cost for the call.
-        """
-        if usage is None or self._llm_price is None:
+    def _llm_cost(self, usage: Optional[TokenUsage], price: Optional[Any]) -> float:
+        """Calculate LLM cost for a single stage from token usage and price details."""
+        if usage is None or price is None:
             return 0.0
-        input_cost = (
-            usage.input_tokens / _TOKENS_PER_MILLION
-        ) * self._llm_price.input_per_million
-        output_cost = (
-            usage.output_tokens / _TOKENS_PER_MILLION
-        ) * self._llm_price.output_per_million
+        input_cost = (usage.input_tokens / _TOKENS_PER_MILLION) * price.input_per_million
+        output_cost = (usage.output_tokens / _TOKENS_PER_MILLION) * price.output_per_million
         return input_cost + output_cost
 
     def _embedding_cost(self, token_count: int) -> float:
-        """Calculate embedding query cost from token count.
-
-        Args:
-            token_count: Number of tokens in the embedding query.
-
-        Returns:
-            USD cost for the embedding call.
-        """
+        """Calculate embedding query cost from token count."""
         if self._emb_price is None or token_count <= 0:
             return 0.0
         return (token_count / _TOKENS_PER_MILLION) * self._emb_price.input_per_million
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def calculate_ticket_cost(
         self,
@@ -125,25 +95,8 @@ class BillingCalculator:
         embedding_tokens: int = 0,
         retrieval_required: bool = True,
     ) -> TicketCost:
-        """Calculate the full runtime inference cost for one support ticket.
-
-        Billing flow:
-            Decision Gate LLM call → input + output tokens → decision_cost
-            Query embedding (if retrieval_required) → embedding_cost
-            Pinecone vector query (if retrieval_required) → retriever_cost
-            Reranker (FlashRank/CrossEncoder = free; LLM = billed at LLM rate) → reranker_cost
-            Generation LLM call → input + output tokens → generation_cost
-
-        Args:
-            decision_usage: Token usage from the Decision Gate LLM call.
-            generation_usage: Token usage from the Generation LLM call.
-            embedding_tokens: Token count used for the query embedding.
-            retrieval_required: Whether retrieval was executed for this ticket.
-
-        Returns:
-            TicketCost with full cost breakdown and token counts.
-        """
-        decision_cost = self._llm_cost(decision_usage)
+        """Calculate the full runtime inference cost for one support ticket."""
+        decision_cost = self._llm_cost(decision_usage, self._decision_price)
 
         embedding_cost = 0.0
         retriever_cost = 0.0
@@ -152,13 +105,10 @@ class BillingCalculator:
         if retrieval_required:
             embedding_cost = self._embedding_cost(embedding_tokens)
             retriever_cost = PINECONE_QUERY_COST
-            # FlashRank and CrossEncoder are local — no API cost
             if self._reranker == "llm":
-                # LLM reranker billed at same LLM rate as generation
-                # Approximate: same rate, usage tracked separately if available
-                reranker_cost = 0.0  # token usage not separately tracked; kept at 0
+                reranker_cost = 0.0
 
-        generation_cost = self._llm_cost(generation_usage)
+        generation_cost = self._llm_cost(generation_usage, self._generation_price)
 
         return TicketCost(
             decision_cost=decision_cost,
@@ -176,14 +126,7 @@ class BillingCalculator:
     def calculate_experiment_totals(
         self, ticket_costs: List[TicketCost]
     ) -> ExperimentCostSummary:
-        """Aggregate billing metrics across all tickets in an experiment.
-
-        Args:
-            ticket_costs: List of TicketCost objects, one per evaluated ticket.
-
-        Returns:
-            ExperimentCostSummary with totals and averages.
-        """
+        """Aggregate billing metrics across all tickets in an experiment."""
         if not ticket_costs:
             return ExperimentCostSummary()
 

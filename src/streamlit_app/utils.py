@@ -39,8 +39,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AppConfig:
     """Sidebar-configured runtime settings."""
-    provider: str = "Google"
-    selected_model: str = "gemini-2.5-flash-lite"
+    decision_provider: str = "Google"
+    decision_model: str = "gemini-2.5-flash-lite"
+    generation_provider: str = "Google"
+    generation_model: str = "gemini-2.5-flash"
     google_key: str = ""
     openai_key: str = ""
     groq_key: str = ""
@@ -49,6 +51,15 @@ class AppConfig:
     search_mode: str = "Hybrid"
     reranker: str = "None"
     keys_provided: bool = True
+
+    # Properties for backward compatibility
+    @property
+    def provider(self) -> str:
+        return self.generation_provider
+
+    @property
+    def selected_model(self) -> str:
+        return self.generation_model
 
 
 # =============================================================================
@@ -61,12 +72,26 @@ def patch_agent_configs(cfg: AppConfig) -> None:
     Args:
         cfg: The active AppConfig object produced by render_sidebar().
     """
-    src_config.LLM_PROVIDER = cfg.provider.lower()
-    src_config.LLM_MODEL = cfg.selected_model
+    src_config.DECISION_PROVIDER = cfg.decision_provider.lower()
+    src_config.DECISION_MODEL = cfg.decision_model
+    src_config.GENERATION_PROVIDER = cfg.generation_provider.lower()
+    src_config.GENERATION_MODEL = cfg.generation_model
+    
+    src_config.LLM_PROVIDER = cfg.generation_provider.lower()
+    src_config.LLM_MODEL = cfg.generation_model
+
+    src_config.LLM_CONFIG = {
+        "decision": {
+            "provider": cfg.decision_provider.lower(),
+            "model": cfg.decision_model,
+        },
+        "generation": {
+            "provider": cfg.generation_provider.lower(),
+            "model": cfg.generation_model,
+        }
+    }
+
     src_config.GOOGLE_API_KEY = cfg.google_key
-    # GOOGLE_API_KEY_EMBED must also be patched — the embedding client in
-    # vector_search.py reads this key independently. Without this patch the
-    # genai.Client falls back to OAuth and raises a 401 UNAUTHENTICATED error.
     src_config.GOOGLE_API_KEY_EMBED = cfg.google_key
     src_config.OPENAI_API_KEY = cfg.openai_key
     src_config.ANTHROPIC_API_KEY = cfg.anthropic_key
@@ -75,8 +100,7 @@ def patch_agent_configs(cfg: AppConfig) -> None:
     src_config.MAX_CONTEXT_CHUNKS = cfg.top_k
     src_config.BM25_TOP_K = cfg.top_k * 2
     src_config.VECTOR_TOP_K = cfg.top_k * 2
-    if hasattr(src_config, "SEARCH_MODE"):
-        setattr(src_config, "SEARCH_MODE", cfg.search_mode.lower())
+    src_config.SEARCH_MODE = cfg.search_mode.lower()
 
 
 # =============================================================================

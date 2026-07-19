@@ -176,36 +176,30 @@ class EvaluationRunner:
     def run(
         self,
         dataset_path: str,
-        provider: str,
-        model_name: str,
-        search_mode: str,
-        reranker: str,
-        top_k: int,
+        provider: Optional[str] = None,
+        model_name: Optional[str] = None,
+        search_mode: str = "hybrid",
+        reranker: str = "none",
+        top_k: int = 5,
         google_key: Optional[str] = None,
         openai_key: Optional[str] = None,
         anthropic_key: Optional[str] = None,
         groq_key: Optional[str] = None,
         progress_callback: Optional[Any] = None,
+        decision_provider: Optional[str] = None,
+        decision_model: Optional[str] = None,
+        generation_provider: Optional[str] = None,
+        generation_model: Optional[str] = None,
     ) -> Tuple[EvaluationSummary, List[EvaluationResult]]:
         """
         Executes the full evaluation pipeline.
-
-        Args:
-            dataset_path: Path to ground truth CSV.
-            provider: Active LLM provider (google, openai, anthropic, groq).
-            model_name: Active LLM model name.
-            search_mode: Active retrieval search mode (bm25, vector, hybrid).
-            reranker: Active reranker type (none, flashrank, crossencoder, llm).
-            top_k: Top-K retrieved chunks limit.
-            google_key: API credential key.
-            openai_key: API credential key.
-            anthropic_key: API credential key.
-            groq_key: API credential key.
-            progress_callback: Optional callable for updating progress bars (takes iteration indices).
-
-        Returns:
-            Tuple of (EvaluationSummary, List[EvaluationResult]).
         """
+        # Resolve stage provider/model fallbacks
+        dp = (decision_provider or provider or "google").lower()
+        dm = decision_model or model_name or "gemini-2.5-flash-lite"
+        gp = (generation_provider or provider or "google").lower()
+        gm = generation_model or model_name or "gemini-2.5-flash"
+
         start_time = time.time()
         logger.info("Initializing evaluation execution pipeline.")
 
@@ -216,14 +210,30 @@ class EvaluationRunner:
             raise ValueError("No valid samples loaded from evaluation dataset.")
 
         # 2. Patch global configuration variables dynamically
-        src_config.LLM_PROVIDER = provider.lower()
-        src_config.LLM_MODEL = model_name
+        src_config.DECISION_PROVIDER = dp
+        src_config.DECISION_MODEL = dm
+        src_config.GENERATION_PROVIDER = gp
+        src_config.GENERATION_MODEL = gm
+        
+        src_config.LLM_PROVIDER = gp
+        src_config.LLM_MODEL = gm
+
+        src_config.LLM_CONFIG = {
+            "decision": {
+                "provider": dp,
+                "model": dm,
+            },
+            "generation": {
+                "provider": gp,
+                "model": gm,
+            }
+        }
+
         src_config.GOOGLE_API_KEY = google_key
         src_config.OPENAI_API_KEY = openai_key
         src_config.ANTHROPIC_API_KEY = anthropic_key
         src_config.GROQ_API_KEY = groq_key
         src_config.FINAL_TOP_K = top_k
-        # Search mode configuration (handled inside existing hybrid search retrieval nodes via environment/configs)
         if hasattr(src_config, "SEARCH_MODE"):
             setattr(src_config, "SEARCH_MODE", search_mode.lower())
 
@@ -232,13 +242,15 @@ class EvaluationRunner:
         results: List[EvaluationResult] = []
         predictions: List[ClassificationPrediction] = []
 
-        # Initialize billing calculator
+        # Initialize billing calculator with stage details
         billing_calc = BillingCalculator(
-            provider=provider,
-            model=model_name,
             embedding_provider=getattr(src_config, "EMBEDDING_PROVIDER", "google"),
             embedding_model=getattr(src_config, "EMBEDDING_MODEL", "gemini-embedding-001"),
             reranker=reranker,
+            decision_provider=dp,
+            decision_model=dm,
+            generation_provider=gp,
+            generation_model=gm,
         )
         ticket_costs = []
 
@@ -339,6 +351,12 @@ class EvaluationRunner:
                     normalized_subject=agent_res.normalized_subject,
                     routing_reason=agent_res.routing_reason,
                     confidence=agent_res.confidence,
+                    selected_company=agent_res.selected_company,
+                    detected_company=agent_res.detected_company,
+                    verified_company=agent_res.verified_company,
+                    company_match=agent_res.company_match,
+                    company_confidence=agent_res.company_confidence,
+                    classification_confidence=agent_res.classification_confidence,
                     billing=billing_metrics,
                 )
             )
@@ -359,8 +377,8 @@ class EvaluationRunner:
         
         try:
             llm, embeddings = _get_langchain_models(
-                provider=provider,
-                model_name=model_name,
+                provider=gp,
+                model_name=gm,
                 google_key=google_key,
                 openai_key=openai_key,
                 anthropic_key=anthropic_key,
@@ -519,12 +537,16 @@ class EvaluationRunner:
             avg_answer_relevancy=sum(relevancy) / len(relevancy) if relevancy else None,
             
             # Config details
-            provider=provider,
-            model=model_name,
+            provider=gp,
+            model=gm,
             search_mode=search_mode,
             reranker=reranker,
             top_k=top_k,
             evaluation_error=evaluation_error_str,
+            decision_provider=dp,
+            decision_model=dm,
+            generation_provider=gp,
+            generation_model=gm,
 
             # Billing aggregates
             avg_cost_per_ticket=exp_cost_summary.avg_cost_per_ticket,
@@ -582,9 +604,9 @@ class EvaluationRunner:
                     pass
 
         experiment_id = f"EXP-{next_num:04d}"
-        # Human-friendly name: e.g. "Google | Gemini-2.5-Flash-Lite | Hybrid | FlashRank | TopK=5"
+        # Human-friendly name showing both decision and generation model details
         friendly_name = (
-            f"{provider.title()} | {model_name.title()} | "
+            f"Dec: {dp.title()} ({dm}) | Gen: {gp.title()} ({gm}) | "
             f"{search_mode.title()} | {reranker.title()} | TopK={top_k}"
         )
 
@@ -598,8 +620,12 @@ class EvaluationRunner:
         config_snapshot = {
             "experiment_id": experiment_id,
             "friendly_name": friendly_name,
-            "provider": provider,
-            "model": model_name,
+            "provider": gp,
+            "model": gm,
+            "decision_provider": dp,
+            "decision_model": dm,
+            "generation_provider": gp,
+            "generation_model": gm,
             "search_mode": search_mode,
             "reranker": reranker,
             "top_k": top_k,
@@ -629,8 +655,12 @@ class EvaluationRunner:
             "id": experiment_id,
             "friendly_name": friendly_name,
             "timestamp": now_str,
-            "provider": provider,
-            "model": model_name,
+            "provider": gp,
+            "model": gm,
+            "decision_provider": dp,
+            "decision_model": dm,
+            "generation_provider": gp,
+            "generation_model": gm,
             "search_mode": search_mode,
             "reranker": reranker,
             "top_k": top_k,

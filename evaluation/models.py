@@ -107,6 +107,12 @@ class EvaluationResult:
     normalized_subject: str = ""
     routing_reason: str = ""
     confidence: float = 1.0
+    selected_company: str = ""
+    detected_company: str = ""
+    verified_company: str = ""
+    company_match: bool = True
+    company_confidence: float = 1.0
+    classification_confidence: float = 1.0
 
     # Billing metrics
     billing: BillingMetrics = field(default_factory=BillingMetrics)
@@ -148,6 +154,10 @@ class EvaluationSummary:
     reranker: str
     top_k: int
     evaluation_error: Optional[str] = None
+    decision_provider: str = ""
+    decision_model: str = ""
+    generation_provider: str = ""
+    generation_model: str = ""
 
     # Billing aggregates
     avg_cost_per_ticket: float = 0.0

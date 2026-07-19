@@ -3,91 +3,83 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from google import genai
-from google.genai import types
-
-
 import src.config as config
 from src.retrieval.rerankers.base import BaseReranker
+from src.ai.client import LLMClient
+from src.retrieval.rerankers.schemas import RerankerResponse
 
 logger = logging.getLogger(__name__)
-
-from src.retrieval.rerankers.schemas import (
-    RerankerResponse,
-)
 
 
 class LLMReranker(BaseReranker):
     """
-    Gemini Flash based reranker.
+    LLM-based reranker.
 
-    Uses Gemini to reorder candidate
-    retrieval results according to
-    semantic relevance.
+    Reuses the selected Decision Model to reorder candidate
+    retrieval results according to semantic relevance.
     """
 
     def __init__(self):
-        self.client = genai.Client(api_key=config.GOOGLE_API_KEY)
-        self.model_name = (config.LLM_RERANKER_MODEL)
+        self.client = LLMClient()
+        self.input_tokens = 0
+        self.output_tokens = 0
 
-    def rerank(self, query: str, results: list[dict[str, Any]], top_k: int,) -> list[dict[str, Any]]:
+    def rerank(self, query: str, results: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
         """
-        Rerank retrieved chunks using Gemini.
+        Rerank retrieved chunks using the Decision Model.
         """
-
-        logger.info("Reranker selected: Gemini Flash")
+        logger.info("Reranker selected: LLM Reranker")
 
         if not results:
             logger.warning("No retrieval results available.")
             return []
 
+        self.input_tokens = 0
+        self.output_tokens = 0
+
         try:
-            prompt = self._build_prompt(query=query,results=results,)
+            prompt = self._build_prompt(query=query, results=results)
+            messages = [
+                ("system", "You are a helpful assistant that ranks support documentation chunks."),
+                ("human", prompt)
+            ]
 
-            logger.info("Sending %d chunks to Gemini for reranking.",len(results),)
+            logger.info("Sending %d chunks to LLM for reranking.", len(results))
 
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0,
-                    response_mime_type="application/json",
-                    response_schema=RerankerResponse,
-                ),
+            result = self.client.generate(
+                messages=messages,
+                response_schema=RerankerResponse,
+                stage="decision"
             )
 
-            ranked_ids = response.parsed.ranking
-            logger.info("Gemini returned %d ranked chunks.", len(ranked_ids),)
+            # Record token usage
+            self.input_tokens = result.usage.input_tokens
+            self.output_tokens = result.usage.output_tokens
 
-            #
-            # Lookup table.
-            #
+            ranked_ids = result.response.ranking
+            logger.info("LLM reranker returned %d ranked chunks.", len(ranked_ids))
+
+            # Lookup table
             lookup = {result["id"]: result for result in results}
             reranked_results = []
 
-            #
-            # Preserve Gemini ranking.
-            #
+            # Preserve LLM ranking
             for chunk_id in ranked_ids:
                 if chunk_id in lookup:
                     reranked_results.append(lookup.pop(chunk_id))
 
-            #
-            # Append remaining chunks
-            # in original RRF order.
-            #
+            # Append remaining chunks in original RRF order
             reranked_results.extend(lookup.values())
-            logger.info("Gemini reranking completed.")
+            logger.info("LLM reranking completed.")
             return reranked_results[:top_k]
 
         except Exception as exc:
-            logger.exception("Gemini reranking failed: %s",exc,)
+            logger.exception("LLM reranking failed: %s", exc)
             logger.warning("Returning original RRF ranking.")
             return results[:top_k]
 
-
     @staticmethod
-    def _build_prompt(query: str,results: list[dict[str, Any]],) -> str:
+    def _build_prompt(query: str, results: list[dict[str, Any]]) -> str:
         """
         Build Gemini reranking prompt.
         """
@@ -146,4 +138,3 @@ class LLMReranker(BaseReranker):
 
                 {"".join(chunks)}
                 """
-

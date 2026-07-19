@@ -61,7 +61,7 @@ cfg = render_sidebar()
 # Main Navigation Tabs
 # ---------------------------------------------------------------------------
 tab_home, tab_single, tab_batch, tab_eval = st.tabs(
-    ["🏠 Dashboard", "🎫 Single Ticket", "📂 Batch Processing", "📊 Evaluation Analytics"]
+    ["🏠 Dashboard", "🎫 Single Ticket", "📦 Batch Processing", "📊 Evaluation"]
 )
 
 with tab_home:

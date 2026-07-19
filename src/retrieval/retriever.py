@@ -17,9 +17,9 @@ class Retriever:
     3. Build the final LLM context.
     """
 
-    def __init__(self,reranker: str = "none",):
+    def __init__(self, reranker: str = "none", search_mode: str = "hybrid"):
 
-        self.hybrid = HybridSearch(reranker=reranker)
+        self.hybrid = HybridSearch(reranker=reranker, search_mode=search_mode)
 
         self.context_builder = ContextBuilder()
 
@@ -55,7 +55,7 @@ class Retriever:
 
         clean_query = f"{subject}\n{issue}" if subject else issue
 
-        results = self.hybrid.search(
+        results, trace = self.hybrid.search(
             query=search_query,
             company=company,
             filters=filters,
@@ -123,7 +123,9 @@ class Retriever:
                     pruned_results.append(r)
             results = pruned_results
 
-        return self.context_builder.build(results)
+        output = self.context_builder.build(results)
+        output["retrieval_trace"] = trace
+        return output
 
     @staticmethod
     def _build_query(

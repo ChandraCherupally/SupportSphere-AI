@@ -75,6 +75,12 @@ def generate_reports(
             "normalized_subject": r.normalized_subject,
             "routing_reason": r.routing_reason,
             "routing_confidence": r.confidence,
+            "selected_company": r.selected_company,
+            "detected_company": r.detected_company,
+            "verified_company": r.verified_company,
+            "company_match": r.company_match,
+            "company_confidence": r.company_confidence,
+            "classification_confidence": r.classification_confidence,
             
             # Latency and chunks
             "latency": r.latency,
@@ -129,6 +135,10 @@ def generate_reports(
         "metadata": {
             "provider": summary.provider,
             "model": summary.model,
+            "decision_provider": getattr(summary, "decision_provider", ""),
+            "decision_model": getattr(summary, "decision_model", ""),
+            "generation_provider": getattr(summary, "generation_provider", ""),
+            "generation_model": getattr(summary, "generation_model", ""),
             "search_mode": summary.search_mode,
             "reranker": summary.reranker,
             "top_k": summary.top_k,

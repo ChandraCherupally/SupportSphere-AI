@@ -39,6 +39,13 @@ class SupportState(TypedDict, total=False):
     routing_reason: str
 
     confidence: float
+    
+    selected_company: str
+    detected_company: str
+    verified_company: str
+    company_match: bool
+    company_confidence: float
+    classification_confidence: float
 
     # ===========================================================================
     # Retrieval
@@ -57,6 +64,8 @@ class SupportState(TypedDict, total=False):
 
     token_estimate: int
 
+    retrieval_trace: dict
+
     # ===========================================================================
     # Validation
     # ===========================================================================
@@ -67,6 +76,7 @@ class SupportState(TypedDict, total=False):
     # ===========================================================================
 
     reranker: str
+    search_mode: str
 
     # =======================================================================
     # Output

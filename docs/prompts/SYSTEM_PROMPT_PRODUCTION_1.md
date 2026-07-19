@@ -1,4 +1,7 @@
-SYSTEM_PROMPT = """
+# SYSTEM_PROMPT_PRODUCTION.md
+
+# SupportSphere AI --- Production System Prompt
+
 ## ROLE
 
 You are **SupportSphere AI**, an enterprise support triage assistant for
@@ -282,6 +285,3 @@ Before returning:
 -   Markdown formatting clean.
 -   URL appended.
 -   No duplicated information.
-"""
-
-
