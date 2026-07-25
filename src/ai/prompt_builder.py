@@ -1,39 +1,39 @@
 from __future__ import annotations
 
 from typing import Any
+
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 
-from src.ai.system_prompt import SYSTEM_PROMPT
 from src.ai.models import SupportTicket
+from src.ai.prompts.generation_prompt import GENERATION_ENGINE_PROMPT
+
 
 class PromptBuilder:
     """
     Provider-agnostic prompt builder.
 
     Compatible with
-
+    
     - Gemini
     - GPT
-    - Claude
     - Groq
-    - Ollama
     """
 
     def __init__(self) -> None:
 
-        self.template = ChatPromptTemplate.from_messages([("system", SYSTEM_PROMPT), 
-                                                          ("human", "{user_prompt}")])
-
+        self.template = ChatPromptTemplate.from_messages(
+            [("system", GENERATION_ENGINE_PROMPT), ("human", "{user_prompt}")]
+        )
 
     def build(
-        self,
-        *,
-        ticket: SupportTicket,
-        context: list[dict[str, Any]],
-        retrieval_required: bool = True,
-        routing_reason: str = "",
-    ) -> list[BaseMessage]:
+            self,
+            *,
+            ticket: SupportTicket,
+            context: list[dict[str, Any]],
+            retrieval_required: bool = True,
+            routing_reason: str = "",
+        ) -> list[BaseMessage]:
         """
         Build chat messages for the LLM.
         """
@@ -54,13 +54,13 @@ class PromptBuilder:
         return self.template.format_messages(user_prompt=user_prompt)
 
     def _build_routing_prompt(
-        self,
-        *,
-        issue: str,
-        subject: str,
-        company: str,
-        routing_reason: str,
-    ) -> str:
+            self,
+            *,
+            issue: str,
+            subject: str,
+            company: str,
+            routing_reason: str,
+        ) -> str:
         return f"""
                 # SUPPORT TICKET (ROUTING MODE)
 
@@ -81,12 +81,18 @@ class PromptBuilder:
                 {routing_reason or "Retrieval skipped by routing gate."}
                 """
 
-
-    def _build_user_prompt(self, *, issue: str, subject: str, company: str, context: list[dict[str, Any]],) -> str:
+    def _build_user_prompt(
+            self,
+            *,
+            issue: str,
+            subject: str,
+            company: str,
+            context: list[dict[str, Any]],
+        ) -> str:
 
         context_text = self._format_context(context)
         product_areas = sorted({chunk["product_area"] for chunk in context})
-        
+
         return f"""
                 # SUPPORT TICKET
 
@@ -119,11 +125,10 @@ class PromptBuilder:
                 {context_text}
                 """
 
-
     @staticmethod
     def _format_context(
-        context: list[dict[str, Any]],
-    ) -> str:
+            context: list[dict[str, Any]],
+        ) -> str:
         documents = []
         for idx, chunk in enumerate(context, start=1):
             doc_str = (

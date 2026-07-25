@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+
 from src.retrieval.context_builder import ContextBuilder
 from src.retrieval.hybrid_search import HybridSearch
 
@@ -66,27 +67,29 @@ class Retriever:
         for r in results:
             metadata = r.get("metadata", {})
             url = metadata.get("url", "").lower()
-            
+
             # HackerRank Community mapping
             if "help.hackerrank.com" in url:
                 metadata["product_area"] = "community"
-                
+
             # Claude Privacy / Conversation Deletion mapping
             # Cover all pages under privacy.claude.com domain
             elif "privacy.claude.com" in url:
                 metadata["product_area"] = "privacy"
                 # Normalise URL to the canonical privacy article if it's the delete/rename page
                 if "delete-or-rename" in url or "how-can-i-delete" in url:
-                    metadata["url"] = "https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation"
-                
+                    metadata["url"] = (
+                        "https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation"
+                    )
+
             # Visa Travelers Cheques mapping
             elif "travelers-cheques" in url:
                 metadata["product_area"] = "travel_support"
-                
+
             # Visa Travel Support mapping
             elif "travel-support" in url:
                 metadata["product_area"] = "travel_support"
-                
+
             # Visa General Support mapping
             elif url.endswith("support.html") or url.endswith("support.md"):
                 metadata["product_area"] = "general_support"
@@ -95,25 +98,46 @@ class Retriever:
         issue_lower = issue.lower()
         is_conceptual = any(
             word in issue_lower
-            for word in ["advantage", "disadvantage", "best practice", "when should i", "why should i", "difference between"]
+            for word in [
+                "advantage",
+                "disadvantage",
+                "best practice",
+                "when should i",
+                "why should i",
+                "difference between",
+            ]
         )
         if is_conceptual:
             # For procedural chunks, extract only note lines and discard the rest of the text.
             # If a procedural chunk contains no notes, discard it completely.
-            procedural_keywords = ["creat", "renam", "delet", "add", "assign", "evaluat", "how to", "how do", "step-by-step", "updat", "reset"]
+            procedural_keywords = [
+                "creat",
+                "renam",
+                "delet",
+                "add",
+                "assign",
+                "evaluat",
+                "how to",
+                "how do",
+                "step-by-step",
+                "updat",
+                "reset",
+            ]
             pruned_results = []
             for r in results:
                 chunk_index = r.get("metadata", {}).get("chunk_index", 9)
                 section_title = r.get("metadata", {}).get("section", "").lower()
-                
+
                 # If it's a procedural chunk and not the document overview (index 1), extract notes
-                if chunk_index != 1 and any(k in section_title for k in procedural_keywords):
+                if chunk_index != 1 and any(
+                    k in section_title for k in procedural_keywords
+                ):
                     text = r["text"]
                     note_lines = []
                     for line in text.split("\n"):
                         if "note:" in line.lower():
                             note_lines.append(line.strip())
-                    
+
                     if note_lines:
                         # Keep only the note lines
                         r["text"] = "\n\n".join(note_lines)
@@ -171,15 +195,15 @@ class Retriever:
         """
 
         # Title-case words that are not sentence starters (length > 3)
-        proper_nouns = re.findall(r'\b[A-Z][a-z]{2,}\b', text)
+        proper_nouns = re.findall(r"\b[A-Z][a-z]{2,}\b", text)
 
         # Common support action terms (expanded to cover account deletion, conversation removal, etc.)
         action_pattern = re.compile(
-            r'\b(stolen|lost|refund|report|replace|cancel|block|'
-            r'cheque|cheques|contact|emergency|verify|serial|number|issuer|'
-            r'fraud|theft|missing|payment|card|account|'
-            r'delete|remove|clear|destroy|purge|close|deactivate|'
-            r'reinvite|reinvitation|invite|extra time|accommodation|time accommodation)\b',
+            r"\b(stolen|lost|refund|report|replace|cancel|block|"
+            r"cheque|cheques|contact|emergency|verify|serial|number|issuer|"
+            r"fraud|theft|missing|payment|card|account|"
+            r"delete|remove|clear|destroy|purge|close|deactivate|"
+            r"reinvite|reinvitation|invite|extra time|accommodation|time accommodation)\b",
             re.IGNORECASE,
         )
         action_words = [m.group() for m in action_pattern.finditer(text)]
@@ -194,4 +218,3 @@ class Retriever:
                 result.append(word)
 
         return result
-

@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import src.config as config
-from src.retrieval.rerankers.base import BaseReranker
 from src.ai.client import LLMClient
+from src.retrieval.rerankers.base import BaseReranker
 from src.retrieval.rerankers.schemas import RerankerResponse
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,9 @@ class LLMReranker(BaseReranker):
         self.input_tokens = 0
         self.output_tokens = 0
 
-    def rerank(self, query: str, results: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
+    def rerank(
+        self, query: str, results: list[dict[str, Any]], top_k: int
+    ) -> list[dict[str, Any]]:
         """
         Rerank retrieved chunks using the Decision Model.
         """
@@ -40,16 +41,17 @@ class LLMReranker(BaseReranker):
         try:
             prompt = self._build_prompt(query=query, results=results)
             messages = [
-                ("system", "You are a helpful assistant that ranks support documentation chunks."),
-                ("human", prompt)
+                (
+                    "system",
+                    "You are a helpful assistant that ranks support documentation chunks.",
+                ),
+                ("human", prompt),
             ]
 
             logger.info("Sending %d chunks to LLM for reranking.", len(results))
 
             result = self.client.generate(
-                messages=messages,
-                response_schema=RerankerResponse,
-                stage="decision"
+                messages=messages, response_schema=RerankerResponse, stage="decision"
             )
 
             # Record token usage
@@ -86,8 +88,7 @@ class LLMReranker(BaseReranker):
         chunks = []
         for result in results:
             metadata = result["metadata"]
-            chunks.append(
-                f"""
+            chunks.append(f"""
                 Chunk ID: {result["id"]}
 
                 Company:
@@ -106,8 +107,7 @@ class LLMReranker(BaseReranker):
                 {result["text"]}
 
                 ------------------------------------------------------------
-                """
-            )
+                """)
 
         return f"""
                 You are an expert retrieval reranker for a customer support AI assistant.

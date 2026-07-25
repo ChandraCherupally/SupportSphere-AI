@@ -7,18 +7,10 @@ Aggregates cost metrics across a full evaluation experiment.
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from src.billing.catalog import (
-    PINECONE_QUERY_COST,
-    get_embedding_price,
-    get_model_price,
-)
-from src.billing.models import (
-    ExperimentCostSummary,
-    TicketCost,
-    TokenUsage,
-)
+from src.billing.catalog import (PINECONE_QUERY_COST, get_embedding_price, get_model_price)
+from src.billing.models import ExperimentCostSummary, TicketCost, TokenUsage
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +35,7 @@ class BillingCalculator:
         generation_provider: Optional[str] = None,
         generation_model: Optional[str] = None,
     ) -> None:
+    
         self._embedding_provider = embedding_provider.lower()
         self._embedding_model = embedding_model.lower()
         self._reranker = reranker.lower()
@@ -61,17 +54,22 @@ class BillingCalculator:
         if self._decision_price is None:
             logger.warning(
                 "No billing price found for decision stage: provider=%s model=%s. Costs will be 0.0.",
-                self._decision_provider, self._decision_model
+                self._decision_provider,
+                self._decision_model,
             )
+
         if self._generation_price is None:
             logger.warning(
                 "No billing price found for generation stage: provider=%s model=%s. Costs will be 0.0.",
-                self._generation_provider, self._generation_model
+                self._generation_provider,
+                self._generation_model,
             )
+
         if self._emb_price is None:
             logger.warning(
                 "No billing price found for embedding provider=%s model=%s. Costs will be 0.0.",
-                self._embedding_provider, self._embedding_model
+                self._embedding_provider,
+                self._embedding_model,
             )
 
     def _llm_cost(self, usage: Optional[TokenUsage], price: Optional[Any]) -> float:
@@ -94,10 +92,13 @@ class BillingCalculator:
         generation_usage: Optional[TokenUsage],
         embedding_tokens: int = 0,
         retrieval_required: bool = True,
+        input_guardrails_usage: Optional[TokenUsage] = None,
+        retrieval_guardrails_usage: Optional[TokenUsage] = None,
+        output_guardrails_usage: Optional[TokenUsage] = None,
     ) -> TicketCost:
-        """Calculate the full runtime inference cost for one support ticket."""
+    
+        """Calculate the full runtime inference cost for one support ticket."""        
         decision_cost = self._llm_cost(decision_usage, self._decision_price)
-
         embedding_cost = 0.0
         retriever_cost = 0.0
         reranker_cost = 0.0
@@ -110,22 +111,34 @@ class BillingCalculator:
 
         generation_cost = self._llm_cost(generation_usage, self._generation_price)
 
+        # Guardrails costs (calculated using decision model pricing)
+        input_guardrails_cost = self._llm_cost(input_guardrails_usage, self._decision_price)
+        retrieval_guardrails_cost = self._llm_cost(retrieval_guardrails_usage, self._decision_price)
+        output_guardrails_cost = self._llm_cost(output_guardrails_usage, self._decision_price)
+
         return TicketCost(
             decision_cost=decision_cost,
             embedding_cost=embedding_cost,
             retriever_cost=retriever_cost,
             reranker_cost=reranker_cost,
             generation_cost=generation_cost,
+            input_guardrails_cost=input_guardrails_cost,
+            retrieval_guardrails_cost=retrieval_guardrails_cost,
+            output_guardrails_cost=output_guardrails_cost,
             decision_input_tokens=decision_usage.input_tokens if decision_usage else 0,
-            decision_output_tokens=decision_usage.output_tokens if decision_usage else 0,
-            generation_input_tokens=generation_usage.input_tokens if generation_usage else 0,
-            generation_output_tokens=generation_usage.output_tokens if generation_usage else 0,
+            decision_output_tokens=(decision_usage.output_tokens if decision_usage else 0),
+            generation_input_tokens=(generation_usage.input_tokens if generation_usage else 0),
+            generation_output_tokens=(generation_usage.output_tokens if generation_usage else 0),
             embedding_tokens=embedding_tokens if retrieval_required else 0,
+            input_guardrails_input_tokens=(input_guardrails_usage.input_tokens if input_guardrails_usage else 0),
+            input_guardrails_output_tokens=(input_guardrails_usage.output_tokens if input_guardrails_usage else 0),
+            retrieval_guardrails_input_tokens=(retrieval_guardrails_usage.input_tokens if retrieval_guardrails_usage else 0),
+            retrieval_guardrails_output_tokens=(retrieval_guardrails_usage.output_tokens if retrieval_guardrails_usage else 0),
+            output_guardrails_input_tokens=(output_guardrails_usage.input_tokens if output_guardrails_usage else 0),
+            output_guardrails_output_tokens=(output_guardrails_usage.output_tokens if output_guardrails_usage else 0),
         )
 
-    def calculate_experiment_totals(
-        self, ticket_costs: List[TicketCost]
-    ) -> ExperimentCostSummary:
+    def calculate_experiment_totals(self, ticket_costs: List[TicketCost]) -> ExperimentCostSummary:
         """Aggregate billing metrics across all tickets in an experiment."""
         if not ticket_costs:
             return ExperimentCostSummary()
@@ -153,3 +166,4 @@ class BillingCalculator:
             most_expensive_ticket_cost=round(totals[max_idx], 8),
             cheapest_ticket_cost=round(totals[min_idx], 8),
         )
+

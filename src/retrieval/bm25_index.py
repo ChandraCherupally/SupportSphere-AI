@@ -1,5 +1,7 @@
 import pickle
+
 from rank_bm25 import BM25Okapi
+
 from src.config import BM25_INDEX_PATH
 
 
@@ -12,13 +14,11 @@ class BM25Index:
         self.index = None
         self.documents = []
 
-
     def build(self, chunks: list):
         self.documents = chunks
         corpus = [self._tokenize(chunk["text"]) for chunk in chunks]
         self.index = BM25Okapi(corpus)
         self.save()
-
 
     def search(self, query: str, top_k: int = 20, company: str | None = None):
         tokens = self._tokenize(query)
@@ -33,19 +33,20 @@ class BM25Index:
                 break
 
             chunk_company = chunk.get("metadata", {}).get("company", "").strip().lower()
-            if target_company and target_company != "none" and chunk_company != target_company:
+            if (
+                target_company
+                and target_company != "none"
+                and chunk_company != target_company
+            ):
                 continue
 
             results.append({**chunk, "bm25_score": float(score)})
 
         return results
 
-
-
     def save(self):
         with open(BM25_INDEX_PATH, "wb") as f:
             pickle.dump({"index": self.index, "documents": self.documents}, f)
-
 
     def load(self):
         with open(BM25_INDEX_PATH, "rb") as f:
@@ -55,8 +56,7 @@ class BM25Index:
         self.index = data["index"]
         self.documents = data["documents"]
 
-
     def _tokenize(self, text: str):
         import re
-        return re.findall(r'\b\w+\b', text.lower())
 
+        return re.findall(r"\b\w+\b", text.lower())

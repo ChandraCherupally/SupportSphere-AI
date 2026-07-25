@@ -64,7 +64,10 @@ class HybridSearch:
 
         logger.info(
             "Executing retrieval for query: '%s' | Company: '%s' | Configured Top-K: %d | Search Mode: %s",
-            query, company, final_top_k, active_mode
+            query,
+            company,
+            final_top_k,
+            active_mode,
         )
 
         # Helper to query candidates from search backends
@@ -142,14 +145,18 @@ class HybridSearch:
         strategy_executed = ""
 
         for attempt in range(max_attempts):
-            candidates, bm25_count, vector_count, strategy_executed = get_candidates(current_limit)
+            candidates, bm25_count, vector_count, strategy_executed = get_candidates(
+                current_limit
+            )
             unique_candidates = deduplicate(candidates)
 
             # Break if we have enough unique candidates to satisfy Top-K
             if len(unique_candidates) >= final_top_k:
                 logger.debug(
                     "Attempt %d succeeded. Found %d unique candidates (Limit: %d).",
-                    attempt + 1, len(unique_candidates), current_limit
+                    attempt + 1,
+                    len(unique_candidates),
+                    current_limit,
                 )
                 break
 
@@ -157,13 +164,16 @@ class HybridSearch:
             if len(candidates) < current_limit:
                 logger.debug(
                     "Attempt %d: corpus exhausted. Only %d raw candidates returned (Limit: %d).",
-                    attempt + 1, len(candidates), current_limit
+                    attempt + 1,
+                    len(candidates),
+                    current_limit,
                 )
                 break
 
             logger.debug(
                 "Attempt %d: only %d unique candidates found. Scaling search candidate limit.",
-                attempt + 1, len(unique_candidates)
+                attempt + 1,
+                len(unique_candidates),
             )
             current_limit *= 2
 

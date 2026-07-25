@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from src.retrieval.rerankers.base import BaseReranker
-logger = logging.getLogger(__name__)
 
+from src.retrieval.rerankers.base import BaseReranker
+
+logger = logging.getLogger(__name__)
 
 
 class NoOpReranker(BaseReranker):
@@ -20,7 +21,12 @@ class NoOpReranker(BaseReranker):
     disabled.
     """
 
-    def rerank(self, query: str, results: list[dict[str, Any]], top_k: int,) -> list[dict[str, Any]]:
+    def rerank(
+        self,
+        query: str,
+        results: list[dict[str, Any]],
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         """
         Return the original retrieval results.
 
@@ -54,7 +60,7 @@ class NoOpReranker(BaseReranker):
             return reranked_results
 
         except Exception as exc:
-            logger.exception("Unexpected error in NoOpReranker: %s",exc)
+            logger.exception("Unexpected error in NoOpReranker: %s", exc)
             #
             # Fail safely.
             #

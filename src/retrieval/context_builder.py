@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 from typing import Any
 
 # pyrefly: ignore [missing-import]
 import src.config as src_config
 from src.ai.models import RetrievedChunk
+
 
 class ContextBuilder:
     """
@@ -49,19 +51,20 @@ class ContextBuilder:
             if token_estimate <= 0:
                 continue
 
-            max_chunks = getattr(src_config, "FINAL_TOP_K", getattr(src_config, "MAX_CONTEXT_CHUNKS", 10))
+            max_chunks = getattr(
+                src_config, "FINAL_TOP_K", getattr(src_config, "MAX_CONTEXT_CHUNKS", 10)
+            )
             max_tokens = getattr(src_config, "MAX_CONTEXT_TOKENS", 6000)
             if len(context) >= max_chunks:
                 break
 
-            if (
-                total_tokens + token_estimate
-                > max_tokens
-            ):
+            if total_tokens + token_estimate > max_tokens:
                 break
 
             # Enforce per-URL cap
-            url_key = metadata.get("url", "").lower().split("?")[0]  # strip query params
+            url_key = (
+                metadata.get("url", "").lower().split("?")[0]
+            )  # strip query params
             if url_counts.get(url_key, 0) >= max_chunks_per_url:
                 continue
             url_counts[url_key] = url_counts.get(url_key, 0) + 1
@@ -86,35 +89,24 @@ class ContextBuilder:
             )
 
             retrieved_chunks.append(
-
                 RetrievedChunk(
-
                     company=metadata["company"],
-
                     product_area=metadata["product_area"],
-
                     title=metadata["title"],
-
                     section=metadata["section"],
-
                     url=metadata["url"],
-
                     document_id=metadata.get(
                         "doc_id",
                         "",
                     ),
-
                     chunk_id=result["id"],
-
                     score=max(
                         result.get("vector_score", 0.0),
                         result.get("bm25_score", 0.0),
                     ),
-
                     text=result["text"],
                 )
             )
-            
 
             total_tokens += token_estimate
 
@@ -125,4 +117,3 @@ class ContextBuilder:
             "num_chunks": len(context),
             "token_estimate": total_tokens,
         }
-

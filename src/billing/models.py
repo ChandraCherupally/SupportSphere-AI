@@ -6,7 +6,7 @@ Defines immutable price structs and mutable cost accumulators.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -56,13 +56,13 @@ class TicketCost:
     """Inference cost breakdown for a single support ticket.
 
     Attributes:
-        decision_cost: Cost of the Decision Gate LLM call (USD).
+        decision_cost: Cost of the Intent & Routing Engine LLM call (USD).
         embedding_cost: Cost of query embedding (USD).
         retriever_cost: Cost of vector database query (USD).
         reranker_cost: Cost of reranker inference (USD).
         generation_cost: Cost of the RAG generation LLM call (USD).
-        decision_input_tokens: Input tokens used in Decision Gate call.
-        decision_output_tokens: Output tokens used in Decision Gate call.
+        decision_input_tokens: Input tokens used in Intent & Routing Engine call.
+        decision_output_tokens: Output tokens used in Intent & Routing Engine call.
         generation_input_tokens: Input tokens used in Generation call.
         generation_output_tokens: Output tokens used in Generation call.
         embedding_tokens: Tokens used for query embedding.
@@ -73,12 +73,21 @@ class TicketCost:
     retriever_cost: float = 0.0
     reranker_cost: float = 0.0
     generation_cost: float = 0.0
+    input_guardrails_cost: float = 0.0
+    retrieval_guardrails_cost: float = 0.0
+    output_guardrails_cost: float = 0.0
 
     decision_input_tokens: int = 0
     decision_output_tokens: int = 0
     generation_input_tokens: int = 0
     generation_output_tokens: int = 0
     embedding_tokens: int = 0
+    input_guardrails_input_tokens: int = 0
+    input_guardrails_output_tokens: int = 0
+    retrieval_guardrails_input_tokens: int = 0
+    retrieval_guardrails_output_tokens: int = 0
+    output_guardrails_input_tokens: int = 0
+    output_guardrails_output_tokens: int = 0
 
     @property
     def total_cost(self) -> float:
@@ -89,17 +98,32 @@ class TicketCost:
             + self.retriever_cost
             + self.reranker_cost
             + self.generation_cost
+            + self.input_guardrails_cost
+            + self.retrieval_guardrails_cost
+            + self.output_guardrails_cost
         )
 
     @property
     def total_input_tokens(self) -> int:
         """Total input tokens across all LLM calls."""
-        return self.decision_input_tokens + self.generation_input_tokens
+        return (
+            self.decision_input_tokens
+            + self.generation_input_tokens
+            + self.input_guardrails_input_tokens
+            + self.retrieval_guardrails_input_tokens
+            + self.output_guardrails_input_tokens
+        )
 
     @property
     def total_output_tokens(self) -> int:
         """Total output tokens across all LLM calls."""
-        return self.decision_output_tokens + self.generation_output_tokens
+        return (
+            self.decision_output_tokens
+            + self.generation_output_tokens
+            + self.input_guardrails_output_tokens
+            + self.retrieval_guardrails_output_tokens
+            + self.output_guardrails_output_tokens
+        )
 
     @property
     def total_tokens(self) -> int:

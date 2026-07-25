@@ -6,7 +6,7 @@ Verifies BM25, Vector, and Hybrid retrieval modes, deduplication, URL capping, a
 from __future__ import annotations
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import src.config as src_config
 from src.retrieval.hybrid_search import HybridSearch
@@ -39,8 +39,16 @@ class TestRetrievalPipeline(unittest.TestCase):
         mock_vector_inst = mock_vector_cls.return_value
 
         mock_bm25_inst.search.return_value = [
-            {"id": "bm25_1", "text": "BM25 content 1", "metadata": {"url": "http://a.com", "company": "Claude"}},
-            {"id": "bm25_2", "text": "BM25 content 2", "metadata": {"url": "http://a.com", "company": "Claude"}},
+            {
+                "id": "bm25_1",
+                "text": "BM25 content 1",
+                "metadata": {"url": "http://a.com", "company": "Claude"},
+            },
+            {
+                "id": "bm25_2",
+                "text": "BM25 content 2",
+                "metadata": {"url": "http://a.com", "company": "Claude"},
+            },
         ]
 
         hybrid = HybridSearch(reranker="none", search_mode="bm25")
@@ -65,7 +73,11 @@ class TestRetrievalPipeline(unittest.TestCase):
         mock_vector_inst = mock_vector_cls.return_value
 
         mock_vector_inst.search.return_value = [
-            {"id": "vec_1", "text": "Vector content 1", "metadata": {"url": "http://b.com", "company": "Claude"}},
+            {
+                "id": "vec_1",
+                "text": "Vector content 1",
+                "metadata": {"url": "http://b.com", "company": "Claude"},
+            },
         ]
 
         hybrid = HybridSearch(reranker="none", search_mode="vector")
@@ -90,11 +102,23 @@ class TestRetrievalPipeline(unittest.TestCase):
         mock_vector_inst = mock_vector_cls.return_value
 
         mock_bm25_inst.search.return_value = [
-            {"id": "c1", "text": "shared content", "metadata": {"url": "http://c.com", "company": "Claude"}},
+            {
+                "id": "c1",
+                "text": "shared content",
+                "metadata": {"url": "http://c.com", "company": "Claude"},
+            },
         ]
         mock_vector_inst.search.return_value = [
-            {"id": "c1", "text": "shared content", "metadata": {"url": "http://c.com", "company": "Claude"}},
-            {"id": "c2", "text": "other content", "metadata": {"url": "http://d.com", "company": "Claude"}},
+            {
+                "id": "c1",
+                "text": "shared content",
+                "metadata": {"url": "http://c.com", "company": "Claude"},
+            },
+            {
+                "id": "c2",
+                "text": "other content",
+                "metadata": {"url": "http://d.com", "company": "Claude"},
+            },
         ]
 
         hybrid = HybridSearch(reranker="none", search_mode="hybrid")
@@ -129,18 +153,50 @@ class TestRetrievalPipeline(unittest.TestCase):
             if top_k <= 10:
                 # First attempt candidate list
                 return [
-                    {"id": "1", "text": "text 1", "metadata": {"url": "http://dup.com", "company": "Claude"}},
-                    {"id": "2", "text": "text 2", "metadata": {"url": "http://dup.com", "company": "Claude"}},
-                    {"id": "3", "text": "text 3", "metadata": {"url": "http://dup.com", "company": "Claude"}},
+                    {
+                        "id": "1",
+                        "text": "text 1",
+                        "metadata": {"url": "http://dup.com", "company": "Claude"},
+                    },
+                    {
+                        "id": "2",
+                        "text": "text 2",
+                        "metadata": {"url": "http://dup.com", "company": "Claude"},
+                    },
+                    {
+                        "id": "3",
+                        "text": "text 3",
+                        "metadata": {"url": "http://dup.com", "company": "Claude"},
+                    },
                 ]
             else:
                 # Second scaled attempt candidate list
                 return [
-                    {"id": "1", "text": "text 1", "metadata": {"url": "http://dup.com", "company": "Claude"}},
-                    {"id": "2", "text": "text 2", "metadata": {"url": "http://dup.com", "company": "Claude"}},
-                    {"id": "3", "text": "text 3", "metadata": {"url": "http://dup.com", "company": "Claude"}},
-                    {"id": "4", "text": "text 4", "metadata": {"url": "http://other.com", "company": "Claude"}},
-                    {"id": "5", "text": "text 5", "metadata": {"url": "http://third.com", "company": "Claude"}},
+                    {
+                        "id": "1",
+                        "text": "text 1",
+                        "metadata": {"url": "http://dup.com", "company": "Claude"},
+                    },
+                    {
+                        "id": "2",
+                        "text": "text 2",
+                        "metadata": {"url": "http://dup.com", "company": "Claude"},
+                    },
+                    {
+                        "id": "3",
+                        "text": "text 3",
+                        "metadata": {"url": "http://dup.com", "company": "Claude"},
+                    },
+                    {
+                        "id": "4",
+                        "text": "text 4",
+                        "metadata": {"url": "http://other.com", "company": "Claude"},
+                    },
+                    {
+                        "id": "5",
+                        "text": "text 5",
+                        "metadata": {"url": "http://third.com", "company": "Claude"},
+                    },
                 ]
 
         mock_bm25_inst.search.side_effect = search_side_effect

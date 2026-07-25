@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import logging
 from typing import Any
+
 import src.config as config
 from src.retrieval.rerankers.base import BaseReranker
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,7 +21,7 @@ class CrossEncoderReranker(BaseReranker):
     """
 
     def __init__(self, model_name: str | None = None,):
-        self.model_name = (model_name or config.CROSS_ENCODER_MODEL)
+        self.model_name = model_name or config.CROSS_ENCODER_MODEL
         self.model: Any | None = None
 
     def _load_model(self) -> bool:
@@ -36,22 +39,21 @@ class CrossEncoderReranker(BaseReranker):
             return True
 
         try:
-
-            logger.info("Loading CrossEncoder model: %s", self.model_name,)
-
+            logger.info("Loading CrossEncoder model: %s",self.model_name,)
             #
             # Lazy import.
             #
             from sentence_transformers import CrossEncoder
+
             self.model = CrossEncoder(self.model_name)
             logger.info("CrossEncoder loaded successfully.")
             return True
 
         except Exception as exc:
-            logger.exception("Failed to load CrossEncoder model: %s", exc,)
+            logger.exception("Failed to load CrossEncoder model: %s",exc,)
             return False
 
-    def rerank(self, query: str, results: list[dict[str, Any]],top_k: int,) -> list[dict[str, Any]]:
+    def rerank(self, query: str, results: list[dict[str, Any]], top_k: int,) -> list[dict[str, Any]]:
         """
         Rerank retrieval results using
         CrossEncoder relevance scores.
@@ -75,7 +77,10 @@ class CrossEncoderReranker(BaseReranker):
             # Build query-document pairs.
             #
             pairs = [(query, result["text"]) for result in results]
-            logger.info("Scoring %d retrieved chunks.", len(pairs),)
+            logger.info(
+                "Scoring %d retrieved chunks.",
+                len(pairs),
+            )
             scores = self.model.predict(pairs, show_progress_bar=False)
 
             #
@@ -86,7 +91,10 @@ class CrossEncoderReranker(BaseReranker):
             #
             # Sort by score.
             #
-            reranked_results = sorted(results, key=lambda item: item["rerank_score"],reverse=True,)
+            reranked_results = sorted(results,
+                key=lambda item: item["rerank_score"],
+                reverse=True,
+            )
             logger.info("CrossEncoder reranking completed.")
 
             return reranked_results[:top_k]

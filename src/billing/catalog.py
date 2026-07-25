@@ -7,16 +7,14 @@ so historical cost calculations remain reproducible even if prices change.
 """
 
 from __future__ import annotations
-
 from typing import Dict, Optional
-
 from src.billing.models import EmbeddingPrice, ModelPrice
 
 # =============================================================================
 # Catalog Version
 # =============================================================================
 
-PRICING_VERSION: str = "2025-07-18"
+PRICING_VERSION: str = "2026-07-18"
 
 # =============================================================================
 # Pinecone Query Cost (configurable)
@@ -35,16 +33,16 @@ _LLM_CATALOG: Dict[str, Dict[str, ModelPrice]] = {
         "gemini-2.5-flash-lite": ModelPrice(input_per_million=0.10, output_per_million=0.40),
         "gemini-2.5-flash": ModelPrice(input_per_million=0.30, output_per_million=2.50),
         "gemini-2.5-pro": ModelPrice(input_per_million=1.25, output_per_million=10.00),
-        "gemini-3.1-flash-lite": ModelPrice(input_per_million=0.10, output_per_million=0.40),
+        "gemini-3.1-flash-lite": ModelPrice(input_per_million=0.25, output_per_million=1.5),
         "gemini-3.5-flash": ModelPrice(input_per_million=1.50, output_per_million=9.00),
     },
     "openai": {
-        "gpt-4o-mini": ModelPrice(input_per_million=0.15, output_per_million=0.60),
-        "gpt-4o": ModelPrice(input_per_million=2.50, output_per_million=10.00),
+        "gpt-5.4-mini": ModelPrice(input_per_million=1.50, output_per_million=9.00),
+        "gpt-5.4": ModelPrice(input_per_million=5.00, output_per_million=30.00),
         "gpt-5-mini": ModelPrice(input_per_million=0.45, output_per_million=3.60),
         "gpt-5": ModelPrice(input_per_million=2.50, output_per_million=20.00),
-        "gpt-5.4-mini": ModelPrice(input_per_million=0.75, output_per_million=4.50),
-        "gpt-5.4": ModelPrice(input_per_million=2.50, output_per_million=15.00),
+        "gpt-4o-mini": ModelPrice(input_per_million=0.25, output_per_million=1.00),
+        "gpt-4o": ModelPrice(input_per_million=4.25, output_per_million=17.00),
     },
     "groq": {
         "llama-3.3-70b-versatile": ModelPrice(input_per_million=0.59, output_per_million=0.79),
@@ -53,13 +51,24 @@ _LLM_CATALOG: Dict[str, Dict[str, ModelPrice]] = {
     },
 }
 
+
 def get_supported_models() -> Dict[str, list[str]]:
     """Return a mapping of provider to list of model names from _LLM_CATALOG."""
     res = {}
     for provider, models in _LLM_CATALOG.items():
-        prov_key = "Google" if provider == "google" else ("OpenAI" if provider == "openai" else provider.title())
+        prov_key = (
+            "OpenAI"
+            if provider == "openai"
+            else ("Google" if provider == "google" else provider.title())
+        )
         res[prov_key] = list(models.keys())
     return res
+
+
+# Backward compatibility alias
+MODEL_PRICING = get_supported_models()
+
+
 
 # =============================================================================
 # Embedding Pricing Catalog

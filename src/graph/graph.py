@@ -1,91 +1,75 @@
+"""
+Topological LangGraph workflow wiring for SupportSphere AI.
+
+Pipeline topology:
+
+       START
+         │
+         ▼
+  Decision Engine  (LLM #1: Input Safety + Intent + Company + Strategy + Retrieval Decision)
+         │
+         ├── [Retrieval Required] ─────► Retrieval ──► Retrieval Validation (Rules)
+         │                                                      │
+         └── [Retrieval Not Required] ──────────────────────────┤
+                                                                │
+                                                                ▼
+                                                            Generation  (LLM #2 / Template Response)
+                                                                │
+                                                                ▼
+                                                        Response Validation (Rules)
+                                                                │
+                                                                ▼
+                                                               END
+"""
+
 from __future__ import annotations
 
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 
 from src.graph.nodes import (
-    input_check_node,
-    decision_gate_node,
-    retrieve_node,
-    retrieval_check_node,
+    decision_engine_node,
     generate_node,
-    output_check_node,
+    response_validation_node,
+    retrieval_validation_node,
+    retrieve_node,
 )
 from src.graph.state import SupportState
 
 
 def build_graph():
-    """
-    Build and compile the SupportSphere workflow.
-
-    Workflow
-
-        START
-          │
-          ▼
-      Input Check
-          │
-          ▼
-     Decision Gate
-        ├── Retrieval Required
-        │      → Retrieve
-        │      → Retrieval Check
-        └── Retrieval Not Required
-          │
-          ▼
-       Generate
-          │
-          ▼
-      Output Check
-          │
-          ▼
-         END
-    """
-
+    """Build and compile the 5-node stateful LangGraph support agent graph."""
     workflow = StateGraph(SupportState)
 
-    workflow.add_node("input_check", input_check_node)
-    workflow.add_node("decision_gate", decision_gate_node)
-    workflow.add_node("retrieve", retrieve_node)
-    workflow.add_node("retrieval_check", retrieval_check_node)
-    workflow.add_node("generate", generate_node)
-    workflow.add_node("output_check", output_check_node)
+    workflow.add_node("decision_engine", decision_engine_node)
+    workflow.add_node("retrieval", retrieve_node)
+    workflow.add_node("retrieval_validation", retrieval_validation_node)
+    workflow.add_node("generation", generate_node)
+    workflow.add_node("response_validation", response_validation_node)
 
-    # Wire nodes
-    
-    workflow.add_edge(START, "input_check")
-    workflow.add_edge("input_check", "decision_gate")
+    workflow.add_edge(START, "decision_engine")
 
-    # Route conditionally after Decision Gate
     def route_after_decision(state: SupportState) -> str:
+        if state.get("blocked", False):
+            return "generation"
         if state.get("retrieval_required", True):
-            return "retrieve"
-        return "generate"
+            return "retrieval"
+        return "generation"
 
     workflow.add_conditional_edges(
-        "decision_gate",
+        "decision_engine",
         route_after_decision,
         {
-            "retrieve": "retrieve",
-            "generate": "generate",
-        }
+            "retrieval": "retrieval",
+            "generation": "generation",
+        },
     )
 
-    workflow.add_edge("retrieve", "retrieval_check")
-    workflow.add_edge("retrieval_check", "generate")
-    workflow.add_edge("generate", "output_check")
-    workflow.add_edge("output_check", END)
-
-    """
-    workflow.add_edge(START,"retrieve")
-    workflow.add_edge("retrieve","generate")
-    workflow.add_edge("generate",END)
-    """
+    workflow.add_edge("retrieval", "retrieval_validation")
+    workflow.add_edge("retrieval_validation", "generation")
+    workflow.add_edge("generation", "response_validation")
+    workflow.add_edge("response_validation", END)
 
     return workflow.compile()
 
-
-# =============================================================================
-# Singleton Compiled Graph
-# =============================================================================
 
 support_graph = build_graph()

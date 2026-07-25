@@ -64,15 +64,11 @@ class ReciprocalRankFusion:
 
                     fused[chunk_id]["retrieval_sources"] = []
 
-                fused[chunk_id]["rrf_score"] += (
-                    1.0 / (self.k + rank)
-                )
+                fused[chunk_id]["rrf_score"] += 1.0 / (self.k + rank)
 
                 if source_name not in fused[chunk_id]["retrieval_sources"]:
 
-                    fused[chunk_id]["retrieval_sources"].append(
-                        source_name
-                    )
+                    fused[chunk_id]["retrieval_sources"].append(source_name)
 
         return sorted(
             fused.values(),
