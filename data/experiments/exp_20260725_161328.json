@@ -1,0 +1,81 @@
+{
+  "experiment_id": "exp_20260725_161328",
+  "timestamp": "2026-07-25 16:13:28",
+  "dataset_name": "sample_support_tickets_ground_truth_1.csv",
+  "runtime_configuration": {
+    "decision_provider": "Google",
+    "decision_model": "gemini-2.5-flash-lite",
+    "generation_provider": "Google",
+    "generation_model": "gemini-3.1-flash-lite",
+    "search_mode": "Hybrid",
+    "top_k": 5,
+    "reranker": "None"
+  },
+  "evaluation_summary": {
+    "decision_engine": {
+      "request_type_accuracy": 1.0,
+      "product_area_accuracy": 1.0,
+      "status_accuracy": 1.0
+    },
+    "generation_engine": {
+      "faithfulness": 0.882,
+      "answer_relevancy": 0.883,
+      "context_precision": 1.0,
+      "context_recall": 0.556,
+      "answer_correctness": 0.727,
+      "avg_ragas_score": 0.81
+    },
+    "operations": {
+      "total_evaluated": 1,
+      "succeeded_count": 1,
+      "failed_count": 0,
+      "total_cost": 0.00138,
+      "avg_latency_ms": 7799.7,
+      "avg_cost": 0.00138,
+      "avg_tokens": 3898.0,
+      "success_rate": 100.0
+    }
+  },
+  "detailed_results": [
+    {
+      "issue": "Hi there\r\n\r\nWe have sent a candidate a Hackerrank assessment already, but we have been informed that they require extra time. As the assessment is 105 minutes, they need an extra 50% extra time added (so around 53 minutes) in addition.\r\n\r\nPlease can you provide step-by-step instruction on how we are to reinvite them.\r\n\r\nDo we find their profile in 'Candidates' , put in Add time 53 minutes and then click 'reinvite' and send the email? The email to the candidate says 105 minutes as the duration though still so not sure how we can check?\r\n\r\nThanks",
+      "subject": "How to reinvite candidate to Hackerrank \r\nassessment and add extra time",
+      "company": "HackerRank",
+      "expected_response": "Log in to your HackerRank for Work account using your credentials.\r\nGo to the Tests tab. \r\nSelect the test you want to modify.\r\nGo to the Candidates tab.\r\nSelect the checkbox next to the candidate(s) you want to accommodate time.\r\nClick More > Add Time Accommodation. \r\nEnter the accommodation percentage in multiples of five.\r\nClick Save. A success message appears.\r\n\r\nTime accommodation can also be added before the invite has been sent. Please refer to this support article for the detailed steps : https://support.hackerrank.com/articles/4811403281-adding-extra-time-for-candidates",
+      "predicted_response": "Overview\n\nYou can add extra time to a candidate's assessment directly through the HackerRank for Work platform. You do not need to reinvite the candidate to apply this change.\n\nSteps to Add Extra Time\n\n1. Log in to your HackerRank for Work account.\n2. Navigate to the **Tests** tab and select the relevant test.\n3. Go to the **Candidates** tab.\n4. Select the checkbox next to the candidate.\n5. Click **More > Add Time**.\n6. Enter the additional time in minutes (e.g., 53) and click **Confirm**.\n\nNotes\n\n- If the candidate is currently taking the test, they must refresh their browser page to see the updated timer.\n- If the candidate has already completed the test, they must log in again to view the added time.\n- The system-generated email notification may still reflect the original duration; however, the candidate's active timer will reflect the updated duration once they access the test.\n- You do not need to delete a previous invite to allow a candidate to retake a test; you can simply reinvite them if a new attempt is required.\n\nReference\nhttps://support.hackerrank.com/articles/4811403281-adding-extra-time-for-candidates",
+      "expected_request_type": "product_issue",
+      "predicted_request_type": "product_issue",
+      "norm_expected_request_type": "product_issue",
+      "norm_predicted_request_type": "product_issue",
+      "req_match": true,
+      "expected_product_area": "screen",
+      "predicted_product_area": "screen",
+      "norm_expected_product_area": "screen",
+      "norm_predicted_product_area": "screen",
+      "prod_match": true,
+      "expected_status": "Replied",
+      "predicted_status": "Replied",
+      "norm_expected_status": "replied",
+      "norm_predicted_status": "replied",
+      "status_match": true,
+      "latency": 7799.731731414795,
+      "tokens": 3898,
+      "cost": 0.00138045,
+      "retrieved_context": [
+        "Adding extra time\n\nTo add extra time for specific candidates:\n\n1. Log in to your **HackerRank for Work** account using your credentials.\n\n2. Go to the **Tests** tab.\u00a0\n\n3. Select the test you want to modify.\n\n4. Go to the **Candidates** tab.\n\n5. Select the checkbox next to the candidate(s).\n\n6. Click **More > Add Time.\u00a0**\n\n7. Enter the time in minutes.\n\n8. Click **Confirm**.\n\n**Note:\u00a0**\n\n- A candidate who is still in a test session must refresh the page to see the updated timer.\n\n- A candidate who has completed the test must log in again to view the added time.\n\n- Do not add time to a test that contains DevOps questions after it ends or after the candidate submits it. The system purges the virtual machine for DevOps questions upon submission, and added time does not restore access. To allow additional time, re-invite the candidate to take the test as a new attempt.",
+        "Adding extra time in variant-based tests\n\nFor variant-based tests, you can add extra time at the section level for candidates.\n\nTo add extra time for specific candidates in a variant-based test:\n\n1. Log in to your **HackerRank for Work** account using your credentials.\n\n2. Go to the **Tests** tab.\u00a0\n\n3. Select the test you want to modify.\n\n4. Go to the **Candidates** tab.\n\n5. Select the checkbox next to one or more candidates from the same test variant.\n\n6. Click **More > Add Time.\u00a0**\n\n7. In the **Add additional time** dialog, enter additional time (in minutes) for the required sections.\n\n8. Click **Confirm**.\n\n**Note:**\n\n- The **Add additional time** dialog displays only the sections included in the selected variant (for example, Problem Solving, JavaScript, or CSS).\n\n- For bulk updates, select candidates from the same test variant. If you select candidates from different variants, the **Add time** option is disabled. Filter the candidate list to a single variant to continue.\n\n- Candidates who are actively taking the test must refresh the page to see the updated timer.\n\n- Candidates who have completed the test must log in again to view the added time.",
+        "Modifying test expiration time\n\nTo modify the test expiration time:\n\n1. Log in to your **HackerRank for Work** account using your credentials.\n\n2. Go to the **Tests** tab.\n\n3. Open the test you want to update.\n\n4. Go to **Settings > General**.\n\n5. Modify the **Start date & time** and **End date & time** in the **Test Expiration Time** section.\n\n6. Click **Save Changes**.\n\n **Note:**\u00a0\n\n - By default, the **Test Expiration Time** fields are empty.\n\n - To restore the default state, click the clear icon (**X**) to remove the **Start date & time** and **End date & time** values.\n\n**Note**:\u00a0\n\nIf a candidate needs to retake a test, you can reinvite them at any time. You do not need to delete the previous invite or attempt. For more information, see [\ud83d\udcc4 Reinvite Candidates to a Test](/articles/1002936098).",
+        "Sending HackerRank Test Invites from Ashby\n\n- Click **Add** to add the assessment you have selected. You can also add a reviewer for the test.\n\n- Now, create a new candidate or add the test to an existing candidate.\n\n- Click **Add Candidate** and fill in all the candidate's details.\n\n- Click **Next.**\n\n- Choose the job role, interview plan, and the candidate's interview stage.\n\n- Click **Add to Job**.\n\n- Select the interview stage and click **New Activity**.\n\n- Add the HackerRank Assessment by selecting the pre-created test in HackerRank for the assessment type.\n\n- Click **Add Activity**. The HackerRank Assessment will then be displayed.\n\n### Starting the HackerRank Test from Ashby\n\n- You can start the assessment by clicking **Start Assessment**.\n\n- An email is sent to the candidate's account.\n\n- To begin, the candidate needs to click **Start Test**. They will then be redirected to the HackerRank platform login page.\n\n- After a candidate completes the test, the test status is updated on HackerRank.\n\n- The recruiter can view the candidate's assessment reports on HackerRank.",
+        "FAQs\n\nYou can add or remove attendees prior to the interview and still be able to use the same link.\n\nWhenever a candidate logs in, we will record their name and update the Interview with their details. Similar will happen for the interviewer's information.\n\n### I do not see the time and schedule information inside HackerRank.\n\nWe have made this integration lightweight and enabled all of the scheduling through your calendar app. The timing and scheduling information will directly be available in your calendar event.\n\nThis way you can reschedule your event as required and still use the same HackerRank Interview link!\n\n### How to pull questions from a candidate's HackerRank Test inside the Interview session?\n\nWhen you log into the Interview session as an interviewer, you will see an \u201cImport\u201d option on the left that includes questions from the HackerRank test taken by the candidate.\n\nIf you do not see the questions from candidates test even if they have taken a test:\n\n- Check if the candidate has used the same email to log in to the Interview as they used for the test."
+      ],
+      "execution_status": "SUCCESS",
+      "status": "SUCCESS",
+      "faithfulness": 0.882,
+      "answer_relevancy": 0.883,
+      "context_precision": 1.0,
+      "context_recall": 0.556,
+      "answer_correctness": 0.727,
+      "avg_ragas_score": 0.81
+    }
+  ]
+}

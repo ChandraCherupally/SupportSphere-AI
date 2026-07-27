@@ -116,15 +116,14 @@ class RagasEvaluator:
         eval_llm = LangchainLLMWrapper(chat_model)
         run_cfg = RunConfig(timeout=180, max_retries=10, max_workers=2)
 
-        is_temp_restricted = any(sub in self.model_name.lower() for sub in ("o1", "o3", "o-1", "o-3", "reason", "r1"))
-        if is_temp_restricted:
-            for m in (faithfulness, answer_relevancy, context_precision, context_recall, answer_correctness):
-                m.llm = eval_llm
-                if hasattr(getattr(m.llm, "langchain_llm", None), "temperature"):
-                    try:
-                        m.llm.langchain_llm.temperature = None
-                    except Exception:
-                        pass
+        # Ensure RAGAS metrics do not force temperature=0.3 or temperature=0.01 on APIs that reject non-1 temperature
+        for m in (faithfulness, answer_relevancy, context_precision, context_recall, answer_correctness):
+            m.llm = eval_llm
+            if hasattr(getattr(m.llm, "langchain_llm", None), "temperature"):
+                try:
+                    m.llm.langchain_llm.temperature = None
+                except Exception:
+                    pass
 
         # 3. Evaluate RAG tickets (Full 5 RAGAS metrics)
         rag_f_scores, rag_ar_scores, rag_cp_scores, rag_cr_scores, rag_ac_scores = [], [], [], [], []

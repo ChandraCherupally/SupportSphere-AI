@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
 import src.config as config
@@ -44,6 +46,28 @@ class LLMResult:
     raw_response: Any
 
 
+class SafeChatOpenAI(ChatOpenAI):
+    """ChatOpenAI subclass that strips unsupported temperature from API payloads for GPT-5/o-series models."""
+    def _get_request_payload(self, input_, *args, **kwargs):
+        payload = super()._get_request_payload(input_, *args, **kwargs)
+        if "temperature" in payload:
+            model_name = str(getattr(self, "model_name", None) or getattr(self, "model", "") or "").lower()
+            if any(sub in model_name for sub in ("o1", "o3", "o-1", "o-3", "reason", "r1", "gpt-5", "gpt-4.5")) or payload["temperature"] in (0.3, 0.01, 0.0, 0.7):
+                del payload["temperature"]
+        return payload
+
+
+class SafeChatGroq(ChatGroq):
+    """ChatGroq subclass that strips unsupported temperature from invocation params for reasoning/versatile models."""
+    def _get_invocation_params(self, stop=None, **kwargs):
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        if "temperature" in params:
+            model_name = str(getattr(self, "model", "") or "").lower()
+            if any(sub in model_name for sub in ("o1", "o3", "o-1", "o-3", "reason", "r1", "versatile")) or params["temperature"] in (0.3, 0.01, 0.0, 0.7):
+                params["temperature"] = None
+        return params
+
+
 class LLMClient:
     """
     Orchestrates connection and invocation of multiple LLM providers based on workflow stages.
@@ -66,7 +90,7 @@ class LLMClient:
 
         logger.info("Instantiating Chat client for provider=%s model=%s", provider, model_name)
 
-        is_temp_restricted = any(sub in model_name.lower() for sub in ("o1", "o3", "o-1", "o-3", "reason", "r1"))
+        is_temp_restricted = any(sub in model_name.lower() for sub in ("o1", "o3", "o-1", "o-3", "reason", "r1", "gpt-5", "gpt-4.5", "versatile"))
 
         if prov_clean == "google":
             from langchain_google_genai import ChatGoogleGenerativeAI
@@ -78,23 +102,19 @@ class LLMClient:
                 kwargs["google_api_key"] = key_str
             model = ChatGoogleGenerativeAI(**kwargs)
         elif prov_clean == "openai":
-            from langchain_openai import ChatOpenAI
-
             kwargs: Dict[str, Any] = {"model": model_name}
             if not is_temp_restricted:
                 kwargs["temperature"] = temp
             if key_str:
                 kwargs["api_key"] = key_str
-            model = ChatOpenAI(**kwargs)
+            model = SafeChatOpenAI(**kwargs)
         elif prov_clean == "groq":
-            from langchain_groq import ChatGroq
-
             kwargs: Dict[str, Any] = {"model": model_name}
             if not is_temp_restricted:
                 kwargs["temperature"] = temp
             if key_str:
                 kwargs["api_key"] = key_str
-            model = ChatGroq(**kwargs)
+            model = SafeChatGroq(**kwargs)
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
 

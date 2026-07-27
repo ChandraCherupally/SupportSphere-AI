@@ -36,7 +36,6 @@ def extract_col(row: Any, *keys: str) -> str:
 
 
 PRODUCT_AREA_ALIASES = {
-    "claude": "privacy",
     "conversation_management": "privacy",
     "chat_privacy": "privacy",
 }
