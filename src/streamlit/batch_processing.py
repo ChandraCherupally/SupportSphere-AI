@@ -16,7 +16,7 @@ from src.ai.models import AgentResponse, SupportTicket
 from src.graph.support_agent import SupportAgent
 from src.streamlit.utils import AppConfig, patch_agent_configs
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 DEMO_DATASET_PATH = Path("data/support_tickets/support_tickets5.csv")
 

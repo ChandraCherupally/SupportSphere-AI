@@ -31,6 +31,7 @@ def render_dashboard(cfg: AppConfig) -> None:
             - **LLM #2: Generation Engine**: Generates grounded support responses.
             - **Retrieval Engine**: Hybrid BM25 + Dense Vector retrieval with configurable reranking.
             - **Validation**: Deterministic retrieval validation and response validation without additional LLM calls.
+            - **Evaluation Engine**: Automated RAGAS quality evaluation (Faithfulness, Answer Relevance, Context Precision/Recall) and classification accuracy benchmarking.
             - **LangGraph**: Stateful orchestration with complete LangSmith observability.
             """)
 
@@ -64,9 +65,10 @@ def render_dashboard(cfg: AppConfig) -> None:
         ResponseValidation --> END
         TemplateResp --> END
 
-        style DecisionEngine fill:#dbeafe,stroke:#2563eb,stroke-width:2px
-        style Generation fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-        style RetrievalValidation fill:#fef3c7,stroke:#d97706,stroke-width:2px
-        style ResponseValidation fill:#fef3c7,stroke:#d97706,stroke-width:2px
+        style DecisionEngine fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+        style Retrieval fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#3730a3
+        style Generation fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#064e3b
+        style RetrievalValidation fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+        style ResponseValidation fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
     ```
     """)

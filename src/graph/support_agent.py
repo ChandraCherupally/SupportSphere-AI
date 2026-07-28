@@ -18,7 +18,7 @@ from src.runtime_config.runtime import RuntimeConfig
 
 import os 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 class SupportAgent:
     """Orchestrates invocation of the 5-node LangGraph support workflow."""
@@ -168,6 +168,8 @@ class SupportAgent:
         res_dict = res.model_dump()
         res_dict["ticket_id"] = ticket_id
         res_dict["start_time"] = start_time
+        res_dict["subject"] = ticket.subject.strip()
+        res_dict["issue"] = ticket.issue.strip()
         res_dict["decision_model"] = runtime_config.decision_model
         res_dict["search_mode"] = ticket.search_mode
         res_dict["reranker"] = ticket.reranker

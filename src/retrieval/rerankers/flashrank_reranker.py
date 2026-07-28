@@ -8,7 +8,7 @@ from flashrank import Ranker, RerankRequest
 import src.config as config
 from src.retrieval.rerankers.base import BaseReranker
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class FlashRankReranker(BaseReranker):
@@ -28,18 +28,18 @@ class FlashRankReranker(BaseReranker):
             return True
 
         try:
-            logger.info("Loading FlashRank model: %s",config.FLASHRANK_MODEL,)
+            logger.info("[Node 2: Retrieval Engine] Loading FlashRank model: %s", config.FLASHRANK_MODEL)
             self.model = Ranker(
                 model_name=config.FLASHRANK_MODEL,
                 max_length=config.FLASHRANK_MAX_LENGTH,
             )
-            logger.info("FlashRank loaded successfully.")
+            logger.info("[Node 2: Retrieval Engine] FlashRank loaded successfully.")
 
             return True
 
         except Exception as exc:
             logger.exception(
-                "Unable to load FlashRank: %s",
+                "[Node 2: Retrieval Engine] Unable to load FlashRank: %s",
                 exc,
             )
             return False
@@ -51,7 +51,7 @@ class FlashRankReranker(BaseReranker):
         top_k: int,
     ) -> list[dict[str, Any]]:
 
-        logger.info("Reranker selected: FlashRank")
+        logger.info("[Node 2: Retrieval Engine] Reranker selected: FlashRank")
 
         if not results:
             return []
@@ -93,12 +93,10 @@ class FlashRankReranker(BaseReranker):
                     reranked.append(lookup.pop(chunk_id))
 
             reranked.extend(lookup.values())
-            logger.info("FlashRank reranking completed.")
+            logger.info("[Node 2: Retrieval Engine] FlashRank reranking completed.")
             return reranked[:top_k]
 
         except Exception as exc:
             logger.exception(
-                "FlashRank failed: %s",
-                exc,
             )
             return results[:top_k]

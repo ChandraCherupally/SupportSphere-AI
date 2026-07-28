@@ -1,12 +1,8 @@
 from pathlib import Path
-# pyrefly: ignore [missing-import]
-from pipeline.preprocessing.markdown_parser import MarkdownParser
-# pyrefly: ignore [missing-import]
-from pipeline.preprocessing.metadata_builder import MetadataBuilder
-# pyrefly: ignore [missing-import]
-from pipeline.preprocessing.article_enricher import ArticleEnricher
-# pyrefly: ignore [missing-import]
-from pipeline.preprocessing.chunker import Chunker
+from vectordb_ingestion.preprocessing.markdown_parser import MarkdownParser
+from vectordb_ingestion.preprocessing.metadata_builder import MetadataBuilder
+from vectordb_ingestion.preprocessing.article_enricher import ArticleEnricher
+from vectordb_ingestion.preprocessing.chunker import Chunker
 
 
 class DocumentProcessor:

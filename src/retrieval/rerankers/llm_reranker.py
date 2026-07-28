@@ -7,7 +7,7 @@ from src.ai.client import LLMClient
 from src.retrieval.rerankers.base import BaseReranker
 from src.retrieval.rerankers.schemas import RerankerResponse
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class LLMReranker(BaseReranker):

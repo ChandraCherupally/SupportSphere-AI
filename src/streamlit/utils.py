@@ -10,7 +10,7 @@ from typing import Dict, Optional
 
 import src.config as src_config
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 @dataclass

@@ -6,7 +6,7 @@ from typing import Any
 import src.config as config
 from src.retrieval.rerankers.base import BaseReranker
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class CrossEncoderReranker(BaseReranker):

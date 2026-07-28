@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 import src.config as config
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 @dataclass(frozen=True)
@@ -76,7 +76,9 @@ class LLMClient:
     def __init__(self) -> None:
         self._cached_models: Dict[tuple[str, str, str], BaseChatModel] = {}
 
-    def _get_model(self, provider: str, model_name: str, api_key: str = "") -> BaseChatModel:
+    def _get_model(
+        self, provider: str, model_name: str, api_key: Optional[str] = None, stage: str = "generation"
+    ) -> BaseChatModel:
         """
         Retrieves or instantiates a cached LangChain Chat client.
         """
@@ -87,8 +89,9 @@ class LLMClient:
             return self._cached_models[cache_key]
 
         temp = getattr(config, "LLM_TEMPERATURE", 0.0)
+        node_prefix = "[Node 1: Decision Engine]" if stage.lower() == "decision" else "[Node 4: Generation Engine]"
 
-        logger.info("Instantiating Chat client for provider=%s model=%s", provider, model_name)
+        logger.info("%s Instantiating Chat client for provider=%s model=%s", node_prefix, provider, model_name)
 
         is_temp_restricted = any(sub in model_name.lower() for sub in ("o1", "o3", "o-1", "o-3", "reason", "r1", "gpt-5", "gpt-4.5", "versatile"))
 
@@ -219,15 +222,17 @@ class LLMClient:
                 model_name = model_name or config.GENERATION_MODEL
 
         key_str = api_key or config.get_api_key(provider)
+        node_prefix = "[Node 1: Decision Engine]" if stage.lower() == "decision" else "[Node 4: Generation Engine]"
 
         logger.info(
-            "Executing Stage: %s | Provider: %s | Model: %s",
+            "%s Executing Stage: %s | Provider: %s | Model: %s",
+            node_prefix,
             stage,
             provider,
             model_name,
         )
 
-        llm = self._get_model(provider, model_name, key_str)
+        llm = self._get_model(provider, model_name, key_str, stage=stage)
 
         t_start = time.perf_counter()
 
@@ -282,7 +287,8 @@ class LLMClient:
 
         except Exception as e:
             logger.error(
-                "LLM call failed for stage=%s using provider=%s model=%s: %s",
+                "%s LLM call failed for stage=%s using provider=%s model=%s: %s",
+                node_prefix,
                 stage,
                 provider,
                 model_name,
@@ -306,8 +312,9 @@ class LLMClient:
         )
 
         logger.info(
-            "Stage '%s' execution complete (Provider: %s, Model: %s). "
+            "%s Stage '%s' execution complete (Provider: %s, Model: %s). "
             "Latency: %.2fs, Input: %d, Output: %d.",
+            node_prefix,
             stage,
             provider,
             model_name,

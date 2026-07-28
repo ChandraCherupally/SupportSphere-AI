@@ -1,7 +1,7 @@
 from src.config import DATA_DIR
-from pipeline.ingestion.document_processor import DocumentProcessor
-from pipeline.ingestion.embedder import GeminiEmbedder
-from pipeline.ingestion.vector_store import VectorStore
+from vectordb_ingestion.ingestion.document_processor import DocumentProcessor
+from vectordb_ingestion.ingestion.embedder import GeminiEmbedder
+from vectordb_ingestion.ingestion.vector_store import VectorStore
 from src.retrieval.bm25_index import BM25Index
 import pickle
 

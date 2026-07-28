@@ -28,7 +28,7 @@ from src.responses.templates import (
     UNSUPPORTED_COMPANY_TEMPLATE,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 prompt_builder = PromptBuilder()
 llm = LLMClient()

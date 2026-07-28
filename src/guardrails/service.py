@@ -22,7 +22,7 @@ import src.config as src_config
 from src.ai.client import LLMClient
 from src.billing.calculator import BillingCalculator
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class GuardrailUsageAccumulator:

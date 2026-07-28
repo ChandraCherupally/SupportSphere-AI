@@ -14,7 +14,7 @@ from src.retrieval.rank_fusion import ReciprocalRankFusion
 from src.retrieval.rerankers.factory import RerankerFactory
 from src.retrieval.vector_search import VectorSearch
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class HybridSearch:
@@ -63,7 +63,7 @@ class HybridSearch:
             active_mode = "hybrid"
 
         logger.info(
-            "Executing retrieval for query: '%s' | Company: '%s' | Configured Top-K: %d | Search Mode: %s",
+            "[Node 2: Retrieval Engine] Executing retrieval for query: '%s' | Company: '%s' | Configured Top-K: %d | Search Mode: %s",
             query,
             company,
             final_top_k,

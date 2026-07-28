@@ -18,7 +18,7 @@ from src.graph.state import SupportState
 from src.graph.trace import ExecutionTrace, StageRecord
 from src.guardrails.config.actions import filter_duplicate_chunks, verify_company
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 def retrieval_validation_node(state: SupportState) -> Dict[str, Any]:

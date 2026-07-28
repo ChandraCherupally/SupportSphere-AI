@@ -15,7 +15,7 @@ from src.graph.state import SupportState
 from src.graph.trace import ExecutionTrace, StageRecord
 from src.retrieval.retriever import Retriever
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 _retriever_cache = {}
 

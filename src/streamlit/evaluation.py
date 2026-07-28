@@ -22,7 +22,7 @@ from src.evaluation.evaluator import SupportSphereEvaluator
 from src.evaluation.experiment_manager import load_all_experiments, save_experiment
 from src.streamlit.utils import AppConfig, patch_agent_configs
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 DEMO_EVAL_PATH = Path("data/eval_dataset.csv")
 EXPERIMENTS_DIR = Path("data/experiments")

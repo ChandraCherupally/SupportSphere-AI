@@ -8,7 +8,7 @@ from src.retrieval.rerankers.flashrank_reranker import FlashRankReranker
 from src.retrieval.rerankers.llm_reranker import LLMReranker
 from src.retrieval.rerankers.noop_reranker import NoOpReranker
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class RerankerFactory:
@@ -30,7 +30,7 @@ class RerankerFactory:
             logger.debug("Using cached reranker: %s", reranker_name)
             return cls._instances[reranker_name]
 
-        logger.info("Creating reranker: %s", reranker_name)
+        logger.info("[Node 2: Retrieval Engine] Creating reranker: %s", reranker_name)
 
         try:
             if reranker_name == "cross_encoder":

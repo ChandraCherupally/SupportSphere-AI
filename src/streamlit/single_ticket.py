@@ -12,7 +12,7 @@ from src.ai.models import AgentResponse, DecisionResult, SupportTicket
 from src.graph.support_agent import SupportAgent
 from src.streamlit.utils import AppConfig, get_html_badge, patch_agent_configs
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 def render_single_ticket(cfg: AppConfig) -> None:

@@ -22,7 +22,7 @@ from src.evaluation.runtime_metrics import compute_runtime_metrics
 from src.evaluation.utils import extract_col, match_product_area, normalize_val
 from src.graph.support_agent import SupportAgent
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class SupportSphereEvaluator:

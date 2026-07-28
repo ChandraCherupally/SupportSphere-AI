@@ -1,4 +1,4 @@
-from pipeline.ingestion.pinecone_client import PineconeClient
+from vectordb_ingestion.ingestion.pinecone_client import PineconeClient
 
 
 class VectorStore:

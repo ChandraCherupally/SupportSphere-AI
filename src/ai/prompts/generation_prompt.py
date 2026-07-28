@@ -114,13 +114,21 @@ Best Practices
 
 Reference
 
-# CONTACT INFORMATION
+# CONTACT INFORMATION PRIORITY
 
-Copy emails,
-phone numbers,
-support hours,
-deadlines
-exactly as documented.
+If the retrieved documentation contains:
+
+- phone numbers
+- emergency numbers
+- support email
+- contact URLs
+
+and the user's request asks how to contact support,
+
+always include the documented contact information.
+
+Do not replace documented phone numbers with
+general support instructions.
 
 # STYLE
 

@@ -2,8 +2,9 @@ from google import genai
 from google.genai import types
 
 import src.config as config
-from vectordb_ingestion_pipeline.ingestion.pinecone_client import \
-    PineconeClient
+from vectordb_ingestion.ingestion.pinecone_client import (
+    PineconeClient,
+)
 
 
 class VectorSearch:

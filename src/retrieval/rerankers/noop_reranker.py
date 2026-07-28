@@ -5,7 +5,7 @@ from typing import Any
 
 from src.retrieval.rerankers.base import BaseReranker
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 class NoOpReranker(BaseReranker):
@@ -48,15 +48,15 @@ class NoOpReranker(BaseReranker):
             Top-K retrieval results.
         """
 
-        logger.info("Reranker selected: None")
+        logger.info("[Node 2: Retrieval Engine] Reranker selected: None")
 
         try:
             if not results:
-                logger.warning("No retrieval results available for reranking.")
+                logger.warning("[Node 2: Retrieval Engine] No retrieval results available for reranking.")
                 return []
 
             reranked_results = results[:top_k]
-            logger.info("Returning %d chunks without reranking.", len(reranked_results))
+            logger.info("[Node 2: Retrieval Engine] Returning %d chunks without reranking.", len(reranked_results))
             return reranked_results
 
         except Exception as exc:

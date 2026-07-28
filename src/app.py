@@ -53,7 +53,7 @@ try:
     NeMoGuardrailsService()
     logger.info("Guardrails Initialized")
 
-    from vectordb_ingestion_pipeline.ingestion.pinecone_client import PineconeClient
+    from vectordb_ingestion.ingestion.pinecone_client import PineconeClient
 
     PineconeClient()
     logger.info("Pinecone Connected")

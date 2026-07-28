@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 from src.evaluation.evaluation_models import EvaluationSummary
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 EXPERIMENTS_DIR = Path("data/experiments")
 

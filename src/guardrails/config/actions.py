@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from nemoguardrails.actions.actions import action
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 def get_field(chunk: Any, field_name: str, default: Any = "") -> Any:
@@ -30,7 +30,7 @@ def get_field(chunk: Any, field_name: str, default: Any = "") -> Any:
 @action(name="verify_company")
 def verify_company(company: Any, context: Any) -> Dict[str, Any]:
     """Verify if retrieved chunks belong to the correct company."""
-    logger.info("Executing custom action: verify_company (company=%s)", company)
+    logger.info("[Node 3: Retrieval Validation] Executing custom action: verify_company (company=%s)", company)
 
     # Defensive check for unresolved Colang variables or empty fields
     if (
@@ -71,7 +71,7 @@ def verify_company(company: Any, context: Any) -> Dict[str, Any]:
 @action(name="filter_duplicate_chunks")
 def filter_duplicate_chunks(context: Any) -> Dict[str, Any]:
     """Remove duplicate text chunks to optimize prompt context."""
-    logger.info("Executing custom action: filter_duplicate_chunks")
+    logger.info("[Node 3: Retrieval Validation] Executing custom action: filter_duplicate_chunks")
 
     if (
         not context
@@ -95,7 +95,7 @@ def filter_duplicate_chunks(context: Any) -> Dict[str, Any]:
 @action(name="calculate_grounding_score")
 def calculate_grounding_score(response: Any, context: Any) -> Dict[str, Any]:
     """Calculate grounding score based on textual overlap."""
-    logger.info("Executing custom action: calculate_grounding_score")
+    logger.info("[Node 5: Response Validation] Executing custom action: calculate_grounding_score")
 
     if not response or not isinstance(response, str) or response.startswith("$"):
         return {"grounding_score": 1.0}

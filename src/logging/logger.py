@@ -26,7 +26,13 @@ def log_ticket_summary(res: Any) -> None:
         return val if val is not None else default
 
     subject = get_attr(res, "subject")
+    if subject == "N/A":
+        subject = get_attr(res, "normalized_subject", "N/A")
+
     issue = get_attr(res, "issue")
+    if issue == "N/A":
+        issue = get_attr(res, "normalized_issue", "N/A")
+
     selected_company = get_attr(res, "selected_company")
     detected_company = get_attr(res, "detected_company", None)
     verified_company = get_attr(res, "verified_company")
@@ -98,7 +104,6 @@ def log_ticket_summary(res: Any) -> None:
         "================================================================================",
         "SupportSphere AI | Ticket ID: {} | Execution Started: {}".format(ticket_id, start_time),
         "================================================================================",
-        "Ticket: {}".format(subject),
         "Subject: {}".format(subject),
         "Issue: {}".format(str(issue).replace("\n", " ")),
         "Selected Company: {}".format(selected_company),

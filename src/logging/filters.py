@@ -36,6 +36,10 @@ class FrameworkFilter(logging.Filter):
         ]
 
     def filter(self, record):
+        # Normalize application logger names to 'SupportSphere'
+        if record.name.startswith("src.") or record.name.startswith("vectordb_ingestion") or record.name == "__main__":
+            record.name = "SupportSphere"
+
         # Always allow DEBUG level logs to pass to target handlers
         if record.levelno <= logging.DEBUG:
             return True

@@ -16,7 +16,7 @@ from src.graph.trace import ExecutionTrace, StageRecord
 from src.guardrails.config.actions import calculate_grounding_score
 from src.responses.templates import SAFETY_REFUSAL_TEMPLATE
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 
 def response_validation_node(state: SupportState) -> Dict[str, Any]:

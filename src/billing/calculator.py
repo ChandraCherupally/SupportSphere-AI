@@ -12,7 +12,7 @@ from typing import Any, List, Optional
 from src.billing.catalog import (PINECONE_QUERY_COST, get_embedding_price, get_model_price)
 from src.billing.models import ExperimentCostSummary, TicketCost, TokenUsage
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("SupportSphere")
 
 _TOKENS_PER_MILLION: float = 1_000_000.0
 

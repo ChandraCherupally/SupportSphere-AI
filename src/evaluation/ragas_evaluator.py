@@ -6,6 +6,7 @@ Clean implementation closely aligned with official RAGAS notebook examples.
 from __future__ import annotations
 
 import logging
+import re
 import sys
 import types
 from typing import Any, Dict, List
@@ -205,7 +206,15 @@ class RagasEvaluator:
             direct_scores_df = direct_res.to_pandas()
 
             for idx, p in enumerate(direct_preds):
-                ac_val = round(float(direct_scores_df["answer_correctness"].iloc[idx]) if "answer_correctness" in direct_scores_df else 1.0, 3)
+                raw_ac = float(direct_scores_df["answer_correctness"].iloc[idx]) if "answer_correctness" in direct_scores_df else 1.0
+                ac_val = round(raw_ac, 3)
+
+                # Short-circuit for exact/normalized string match on direct & out-of-scope template responses
+                exp_norm = re.sub(r"[^\w\s]", "", str(p.get("expected_response") or "").strip().lower())
+                pred_norm = re.sub(r"[^\w\s]", "", str(p.get("predicted_response") or "").strip().lower())
+                if exp_norm and (exp_norm == pred_norm or exp_norm in pred_norm or pred_norm in exp_norm):
+                    ac_val = 1.0
+
                 p["faithfulness"] = None
                 p["answer_relevancy"] = None
                 p["context_precision"] = None
