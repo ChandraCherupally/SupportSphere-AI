@@ -174,27 +174,33 @@ graph TD
 
 ### 5.1 Topological Node Graph
 
-The system topology is built on a 5-node LangGraph structure (`StateGraph`) with a conditional routing edge after Node 1:
+The system topology is built on a 5-node LangGraph structure (`StateGraph`) with conditional routing branches:
 
 ```mermaid
 flowchart TD
-    Start([START]) --> N1["Node 1: decision_engine"]
+    Input["📥 Ticket Input"] --> Decision["🧠 Decision Engine (LLM #1 + NeMo)"]
     
-    N1 --> Condition{"route_after_decision()\nblocked == True OR\nretrieval_required == False?"}
-    
-    Condition -->|"Yes (Template / Refusal)"| N4["Node 4: generation"]
-    Condition -->|"No (SUPPORT_RESPONSE)"| N2["Node 2: retrieval"]
-    
-    N2 --> N3["Node 3: retrieval_validation"]
-    N3 --> N4
-    N4 --> N5["Node 5: response_validation"]
-    N5 --> End([END])
+    Decision -->|"Blocked / Unsafe"| Refusal["🛡️ Safe Refusal Template"]
+    Decision -->|"Safe & Support Request"| Retrieval["🔍 Retrieval Engine\n(BM25 + Dense Vector + Optional Reranker)"]
+    Decision -->|"Safe & Direct Template"| Template["📋 Static Template Response"]
 
-    style N1 fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    style N2 fill:#ede9fe,stroke:#7c3aed,color:#3730a3
-    style N3 fill:#fef3c7,stroke:#d97706,color:#78350f
-    style N4 fill:#dcfce7,stroke:#16a34a,color:#064e3b
-    style N5 fill:#fef3c7,stroke:#d97706,color:#78350f
+    Retrieval --> RetVal["🧹 Retrieval Validation (Rules)"]
+    RetVal --> Gen["✨ Generation Engine (LLM #2)"]
+    Gen --> RespVal["🛡️ Response Validation (Rules)"]
+
+    Refusal --> End["🏁 END"]
+    RespVal --> End
+    Template --> End
+
+    style Decision fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+    style Retrieval fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#3b0764
+    style RetVal fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style Gen fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#064e3b
+    style RespVal fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style Refusal fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#334155
+    style Template fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#334155
+    style Input fill:#ffffff,stroke:#94a3b8,stroke-width:1px,color:#0f172a
+    style End fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#0f172a
 ```
 
 ### 5.2 State Object Specification (`SupportState`)

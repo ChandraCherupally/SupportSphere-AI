@@ -108,36 +108,29 @@ SupportSphere AI is built on a stateful graph topology managed by LangGraph:
 
 ```mermaid
 flowchart TD
-    User(["👤 User Input"])
-    UI["💻 Streamlit Dashboard\n(4 Tabs + Runtime Sidebar)"]
-    Agent["🚀 SupportAgent Orchestrator"]
+    Input["📥 Ticket Input"] --> Decision["🧠 Decision Engine (LLM #1 + NeMo)"]
+    
+    Decision -->|"Blocked / Unsafe"| Refusal["🛡️ Safe Refusal Template"]
+    Decision -->|"Safe & Support Request"| Retrieval["🔍 Retrieval Engine\n(BM25 + Dense Vector + Optional Reranker)"]
+    Decision -->|"Safe & Direct Template"| Template["📋 Static Template Response"]
 
-    subgraph LangGraph ["LangGraph Stateful 5-Node Workflow"]
-        direction TB
-        N1["🧠 Node 1: Decision Engine\nLLM #1 + NeMo Guardrails\nIntent · Company · Routing Strategy"]
-        N2["🔍 Node 2: Retrieval Engine\nHybrid Search (BM25 + Pinecone Vector)\nRRF Fusion · Deduplication · Reranking"]
-        N3["🧹 Node 3: Retrieval Validation\nRules-Only ($0.00 Cost)\nverify_company · filter_duplicate_chunks"]
-        N4["✨ Node 4: Generation Engine\nLLM #2 / Template Engine\nGrounded Prompt + Citations"]
-        N5["🛡️ Node 5: Response Validation\nRules-Only ($0.00 Cost)\ncalculate_grounding_score Gate"]
-    end
+    Retrieval --> RetVal["🧹 Retrieval Validation (Rules)"]
+    RetVal --> Gen["✨ Generation Engine (LLM #2)"]
+    Gen --> RespVal["🛡️ Response Validation (Rules)"]
 
-    Template["📋 Static Template Response\n(Zero Token Cost)"]
-    Trace["📊 ExecutionTrace & Logger\nStructured Audit Summary"]
-    Output(["📤 Response Output"])
+    Refusal --> End["🏁 END"]
+    RespVal --> End
+    Template --> End
 
-    User --> UI --> Agent --> N1
-    N1 -->|"SUPPORT_RESPONSE (Retrieval Required)"| N2
-    N1 -->|"Template / Blocked"| Template
-    N2 --> N3 --> N4 --> N5
-    Template --> Trace
-    N5 --> Trace
-    Trace --> Output --> User
-
-    style N1 fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    style N2 fill:#ede9fe,stroke:#7c3aed,color:#3730a3
-    style N3 fill:#fef3c7,stroke:#d97706,color:#78350f
-    style N4 fill:#dcfce7,stroke:#16a34a,color:#064e3b
-    style N5 fill:#fef3c7,stroke:#d97706,color:#78350f
+    style Decision fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px,color:#1e1b4b
+    style Retrieval fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#3b0764
+    style RetVal fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style Gen fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#064e3b
+    style RespVal fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
+    style Refusal fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#334155
+    style Template fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#334155
+    style Input fill:#ffffff,stroke:#94a3b8,stroke-width:1px,color:#0f172a
+    style End fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#0f172a
 ```
 
 ---
