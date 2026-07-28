@@ -39,7 +39,6 @@
 - [Project Overview](#-project-overview)
 - [Key Features](#-key-features)
 - [System Architecture](#-system-architecture)
-- [Pipeline Workflow](#-pipeline-workflow)
 - [Technology Stack](#-technology-stack)
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
@@ -131,57 +130,6 @@ flowchart TD
     style Template fill:#f1f5f9,stroke:#64748b,stroke-width:1px,color:#334155
     style Input fill:#ffffff,stroke:#94a3b8,stroke-width:1px,color:#0f172a
     style End fill:#f1f5f9,stroke:#94a3b8,stroke-width:1px,color:#0f172a
-```
-
----
-
-## 🔄 Pipeline Workflow
-
-The sequence diagram below details the data flow and component interactions during ticket execution:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User / Admin
-    participant UI as Streamlit UI
-    participant Agent as SupportAgent
-    participant N1 as Node 1: Decision Engine
-    participant NeMo as NeMo Guardrails
-    participant N2 as Node 2: Retrieval Engine
-    participant N3 as Node 3: Retrieval Validation
-    participant N4 as Node 4: Generation Engine
-    participant N5 as Node 5: Response Validation
-    participant Logger as SupportSphere Logger
-
-    User->>UI: Submit Support Ticket (subject, issue, company)
-    UI->>Agent: invoke(SupportTicket)
-
-    Agent->>N1: decision_engine_node()
-    N1->>NeMo: check_input() safety policies
-    NeMo-->>N1: Intent, RoutingStrategy, CompanyRef
-    N1-->>Agent: DecisionResult + StageRecord
-
-    alt retrieval_required = False (Template / Refusal)
-        Agent->>N4: generate_node() — static template
-    else retrieval_required = True (SUPPORT_RESPONSE)
-        Agent->>N2: retrieve_node()
-        N2->>N2: Parallel BM25 + Pinecone Search
-        N2->>N2: RRF Fusion -> Dedup -> Reranking
-        N2-->>N3: Top-K Ranked Chunks
-
-        N3->>N3: verify_company() & filter_duplicates()
-        N3-->>N4: Validated Context Chunks
-
-        N4->>N4: LLM #2 Grounded Generation
-        N4-->>N5: Draft SupportResponse
-    end
-
-    N5->>N5: calculate_grounding_score()
-    N5-->>Agent: Final AgentResponse
-
-    Agent->>Logger: log_ticket_summary(res)
-    Agent-->>UI: AgentResponse (Response, Sources, ExecutionTrace)
-    UI-->>User: Rendered Answer + Timeline Inspector
 ```
 
 ---
