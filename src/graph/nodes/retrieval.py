@@ -81,7 +81,9 @@ def retrieve_node(state: SupportState) -> Dict[str, Any]:
     r_trace["selected_company"] = state.get("selected_company", state.get("company", ""))
     r_trace["verified_company"] = verified_co
     r_trace["collection_used"] = "support-sphere-ai"
-    r_trace["top_k"] = getattr(src_config, "FINAL_TOP_K", 5)
+    top_k_val = getattr(state.get("runtime_config"), "top_k", None) or getattr(src_config, "FINAL_TOP_K", 5)
+    src_config.FINAL_TOP_K = top_k_val
+    r_trace["top_k"] = top_k_val
 
     from src.billing.catalog import PINECONE_QUERY_COST, get_embedding_price
 
@@ -108,8 +110,9 @@ def retrieve_node(state: SupportState) -> Dict[str, Any]:
             extra={
                 "collection": verified_co,
                 "candidates": r_trace.get("merged_count", 0),
+                "top_k_configured": top_k_val,
                 "duplicates_removed": duplicates_removed,
-                "final_context_chunks": len(retrieval["context"]),
+                "final_context_chunks": len(retrieval.get("context", [])),
                 "estimated_tokens": retrieval.get("token_estimate", 0),
             },
         )

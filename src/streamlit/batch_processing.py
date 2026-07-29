@@ -91,6 +91,7 @@ def render_batch_processing(cfg: AppConfig) -> None:
                         company=company_val,
                         search_mode=cfg.search_mode.lower(),
                         reranker=cfg.reranker.lower(),
+                        top_k=cfg.top_k,
                     )
 
                     try:

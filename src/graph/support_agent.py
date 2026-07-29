@@ -36,6 +36,9 @@ class SupportAgent:
         # Build RuntimeConfig from current src.config (populated by sidebar)
         import src.config as src_cfg
 
+        top_k_val = getattr(ticket, "top_k", None) or getattr(src_cfg, "FINAL_TOP_K", 5)
+        src_cfg.FINAL_TOP_K = top_k_val
+
         runtime_config = RuntimeConfig(
             decision_provider=getattr(src_cfg, "DECISION_PROVIDER", "google"),
             decision_model=getattr(src_cfg, "DECISION_MODEL", "gemini-2.5-flash-lite"),
@@ -44,7 +47,7 @@ class SupportAgent:
             google_api_key=getattr(src_cfg, "GOOGLE_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "") or "",
             openai_api_key=getattr(src_cfg, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or "",
             groq_api_key=getattr(src_cfg, "GROQ_API_KEY", "") or os.getenv("GROQ_API_KEY", "") or "",
-            top_k=getattr(src_cfg, "FINAL_TOP_K", 5),
+            top_k=top_k_val,
             search_mode=(ticket.search_mode or getattr(src_cfg, "SEARCH_MODE", "hybrid")).lower(),
             reranker=(ticket.reranker or getattr(src_cfg, "RERANKER", "none")).lower(),
         )
@@ -173,6 +176,7 @@ class SupportAgent:
         res_dict["decision_model"] = runtime_config.decision_model
         res_dict["search_mode"] = ticket.search_mode
         res_dict["reranker"] = ticket.reranker
+        res_dict["top_k"] = ticket.top_k
         log_ticket_summary(res_dict)
 
         return res

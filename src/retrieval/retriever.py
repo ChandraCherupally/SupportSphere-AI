@@ -94,59 +94,6 @@ class Retriever:
             elif url.endswith("support.html") or url.endswith("support.md"):
                 metadata["product_area"] = "general_support"
 
-        # Dynamic context pruning for purely conceptual queries
-        issue_lower = issue.lower()
-        is_conceptual = any(
-            word in issue_lower
-            for word in [
-                "advantage",
-                "disadvantage",
-                "best practice",
-                "when should i",
-                "why should i",
-                "difference between",
-            ]
-        )
-        if is_conceptual:
-            # For procedural chunks, extract only note lines and discard the rest of the text.
-            # If a procedural chunk contains no notes, discard it completely.
-            procedural_keywords = [
-                "creat",
-                "renam",
-                "delet",
-                "add",
-                "assign",
-                "evaluat",
-                "how to",
-                "how do",
-                "step-by-step",
-                "updat",
-                "reset",
-            ]
-            pruned_results = []
-            for r in results:
-                chunk_index = r.get("metadata", {}).get("chunk_index", 9)
-                section_title = r.get("metadata", {}).get("section", "").lower()
-
-                # If it's a procedural chunk and not the document overview (index 1), extract notes
-                if chunk_index != 1 and any(
-                    k in section_title for k in procedural_keywords
-                ):
-                    text = r["text"]
-                    note_lines = []
-                    for line in text.split("\n"):
-                        if "note:" in line.lower():
-                            note_lines.append(line.strip())
-
-                    if note_lines:
-                        # Keep only the note lines
-                        r["text"] = "\n\n".join(note_lines)
-                        pruned_results.append(r)
-                else:
-                    # Keep non-procedural chunks intact
-                    pruned_results.append(r)
-            results = pruned_results
-
         output = self.context_builder.build(results)
         output["retrieval_trace"] = trace
         return output

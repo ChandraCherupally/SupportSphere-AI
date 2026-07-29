@@ -171,8 +171,13 @@ def _render_evaluation_summary_tab(cfg: AppConfig) -> None:
         status_text = st.empty()
 
         def update_progress(current: int, total: int) -> None:
-            p_bar.progress(current / total)
-            status_text.markdown(f"**Evaluating benchmark ticket {current}/{total}**...")
+            pct = float((current / total) * 0.60)
+            p_bar.progress(max(0.0, min(1.0, pct)))
+            status_text.markdown(f"🎟️ **Evaluating benchmark ticket {current}/{total}**...")
+
+        def update_status(msg: str, pct: float) -> None:
+            p_bar.progress(max(0.0, min(1.0, float(pct))))
+            status_text.markdown(msg)
 
         try:
             evaluator = SupportSphereEvaluator(config={
@@ -187,12 +192,16 @@ def _render_evaluation_summary_tab(cfg: AppConfig) -> None:
                 "reranker": cfg.reranker,
             })
 
-            eval_res = evaluator.run_evaluation(bench_df, progress_callback=update_progress)
+            eval_res = evaluator.run_evaluation(
+                bench_df,
+                progress_callback=update_progress,
+                status_callback=update_status,
+            )
             summary_obj = eval_res["summary"]
             results = eval_res["predictions"]
 
             p_bar.progress(1.0)
-            status_text.success("Finished evaluating benchmark dataset!")
+            status_text.success("✅ Finished evaluating benchmark dataset!")
 
             exp_path = save_experiment(cfg, summary_obj, results, dataset_name=dataset_name or "eval_dataset.csv")
 

@@ -21,6 +21,8 @@ To keep the test active indefinitely, clear these fields by clicking the clear i
 
 
 If the test has an expiration set, adjust these settings to enable new invitations.",screen,Replied,product_issue
+site is down & none of the pages are accessible,,None,"This appears to describe a platform-wide issue.
+Your request has been escalated to a human support agent.",,Escalated,bug
 "I'm noticing that you all have many default versions of roles. (e.g. front end developer for react, angular, vue.js, etc.) What do you consider best practice 
 for when to create a new test versus create a variant of the test? What are the advantages and disadvantages of using variants?","When should I create a variant versus
  have a different test?",HackerRank,"Hi,
@@ -92,6 +94,7 @@ Deleting your account will permanently remove all data and cannot be undone.",co
 
 
 https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation",privacy,Replied,product_issue
+What is the name of the actor in Iron Man?,"Urgent, please help",None ,"I am sorry, but we do not support the requested company. We only support HackerRank, Claude, and Visa.",conversation_management,Replied,invalid
 I bought Visa Traveller's Cheques from Citicorp and they were stolen in Lisbon last night. What do I do?,,Visa,"Call the issuer (Citicorp) immediately. 
 Freephone 1-800-645-6556 or collect 1-813-623-1709, Mon–Fri 6:30 am–2:30 pm EST. 
 
@@ -105,3 +108,4 @@ If you can't reach Citicorp, use Visa's traveller's-cheque contact form on visa.
 Where can I report a lost or stolen Visa card from India?,Card stolen,Visa,"Call Visa India at 000-800-100-1219 to report a lost card. 
 
 From anywhere else in the world, Visa's Global Customer Assistance Service is reachable 24/7 at +1 303 967 1090 and can block your card within ~30 minutes of being reported, plus arrange emergency cash and a replacement card",general_support,Replied,product_issue
+Thank you for helping me,,None,Happy to help.,,Replied,invalid

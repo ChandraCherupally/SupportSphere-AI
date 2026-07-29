@@ -9,7 +9,7 @@ import logging
 import re
 import sys
 import types
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 # Standard shim to prevent third-party legacy import error in ragas
 if "langchain_community.chat_models.vertexai" not in sys.modules:
@@ -65,6 +65,7 @@ class RagasEvaluator:
     def evaluate_generation(
         self,
         predictions: List[Dict[str, Any]],
+        status_callback: Optional[Callable[[str, float], None]] = None,
     ) -> Dict[str, float]:
         """
         Evaluate Generation Engine outputs using native RAGAS metrics.
@@ -129,6 +130,11 @@ class RagasEvaluator:
         # 3. Evaluate RAG tickets (Full 5 RAGAS metrics)
         rag_f_scores, rag_ar_scores, rag_cp_scores, rag_cr_scores, rag_ac_scores = [], [], [], [], []
         if rag_preds:
+            if status_callback:
+                status_callback(
+                    f"🧠 **RAGAS LLM Judge evaluating {len(rag_preds)} RAG tickets across 5 quality metrics (Faithfulness, Relevancy, Precision, Recall, Correctness)...**",
+                    0.70,
+                )
             rag_samples = [
                 {
                     "user_input": str(p.get("issue") or p.get("user_input") or "").strip(),
@@ -179,6 +185,11 @@ class RagasEvaluator:
         # 4. Evaluate Direct / Template tickets (Answer Correctness only, RAG context metrics = None)
         all_ac_scores = list(rag_ac_scores)
         if direct_preds:
+            if status_callback:
+                status_callback(
+                    f"📋 **RAGAS LLM Judge evaluating {len(direct_preds)} Direct/Template responses (Answer Correctness)...**",
+                    0.90,
+                )
             direct_samples = [
                 {
                     "user_input": str(p.get("issue") or p.get("user_input") or "").strip(),

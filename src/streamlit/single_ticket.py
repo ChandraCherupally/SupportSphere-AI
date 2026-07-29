@@ -106,6 +106,7 @@ def render_single_ticket(cfg: AppConfig) -> None:
             company=company_val,
             search_mode=cfg.search_mode.lower(),
             reranker=cfg.reranker.lower(),
+            top_k=cfg.top_k,
         )
 
         with st.spinner("Processing ticket through LangGraph workflow..."):

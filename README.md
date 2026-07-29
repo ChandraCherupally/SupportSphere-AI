@@ -300,13 +300,13 @@ The complete technical documentation suite is available in the [`docs/`](docs/) 
 <summary><strong>View Application Screenshots</strong></summary>
 
 ### Dashboard Tab
-![Dashboard Landing](https://via.placeholder.com/800x400?text=SupportSphere+AI+Dashboard+Overview)
+![alt text](docs\Images\image-1.png)
 
 ### Single Ticket Triage
-![Single Ticket View](https://via.placeholder.com/800x400?text=Single+Ticket+Triage+%26+Execution+Timeline)
+![alt text](docs\Images\image-2.png)
 
 ### Evaluation & Benchmarks
-![RAGAS Evaluation Radar](https://via.placeholder.com/800x400?text=RAGAS+Evaluation+Radar+Chart+%26+Experiment+Comparison)
+![alt text](docs\Images\image-3.png)
 
 </details>
 

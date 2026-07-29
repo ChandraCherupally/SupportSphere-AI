@@ -37,6 +37,7 @@ class SupportTicket(BaseModel):
     company: str = Field(default="", description="Company name.")
     reranker: str = "none"
     search_mode: str = "hybrid"
+    top_k: int = 5
 
 
 # =============================================================================

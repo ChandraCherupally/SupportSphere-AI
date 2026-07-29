@@ -65,8 +65,22 @@ def log_ticket_summary(res: Any) -> None:
 
     # RETRIEVAL
     ret = obs.get("retrieval", {})
+    ret_extra = ret.get("extra", {}) if isinstance(ret.get("extra"), dict) else {}
     ret_latency = ret.get("latency_ms", ret.get("latency", 0.0))
-    ret_candidates = ret.get("candidates", 0)
+    ret_candidates = ret.get("candidates", ret_extra.get("candidates", 0))
+    
+    top_k_from_res = get_attr(res, "top_k", None)
+    ret_top_k = (
+        ret.get("top_k_configured")
+        or ret.get("top_k")
+        or ret_extra.get("top_k_configured")
+        or (top_k_from_res if top_k_from_res != "N/A" else None)
+    )
+    if ret_top_k is None:
+        import src.config as src_config
+        ret_top_k = getattr(src_config, "FINAL_TOP_K", 5)
+
+    ret_chunks_count = ret.get("final_context_chunks", ret_extra.get("final_context_chunks", get_attr(res, "num_chunks", 0)))
     ret_cost = ret.get("cost", 0.0)
 
     # RETRIEVAL VALIDATION
@@ -131,7 +145,10 @@ def log_ticket_summary(res: Any) -> None:
         "2. RETRIEVAL",
         "Collection: {}".format(verified_company),
         "Search Mode: {}".format(search_mode),
+        "Reranker: {}".format(reranker),
         "Candidates Retrieved: {}".format(ret_candidates),
+        "Top-K Configured: {}".format(ret_top_k),
+        "Chunks Used for Context: {}".format(ret_chunks_count),
         "Cost: ${:.6f} | Latency: {:.1f}ms".format(ret_cost, ret_latency),
         "------------------------------------------------------------",
         "3. RETRIEVAL VALIDATION (Rules-Only)",

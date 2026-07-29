@@ -22,6 +22,8 @@ class FrameworkFilter(logging.Filter):
             "action registration",
             "registered actions",
             "http request",
+            "outputparserexception",
+            "stringio",
         ]
         self.suppressed_loggers = [
             "nemoguardrails",
@@ -33,6 +35,7 @@ class FrameworkFilter(logging.Filter):
             "openai",
             "google",
             "gcs",
+            "ragas",
         ]
 
     def filter(self, record):

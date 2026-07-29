@@ -57,12 +57,14 @@ class SupportSphereEvaluator:
         norm_req, norm_prod, norm_status = normalize_val(raw_req), normalize_val(raw_prod), normalize_val(raw_status)
         search_mode = str(self.config.get("search_mode") or getattr(src_config, "SEARCH_MODE", "hybrid")).lower()
         reranker = str(self.config.get("reranker") or getattr(src_config, "RERANKER", "none")).lower()
+        top_k = int(self.config.get("top_k") or getattr(src_config, "FINAL_TOP_K", 5))
         ticket = SupportTicket(
             issue=issue,
             subject=subject,
             company=company,
             search_mode=search_mode,
             reranker=reranker,
+            top_k=top_k,
         )
         t_start = time.time()
 
@@ -135,6 +137,7 @@ class SupportSphereEvaluator:
         self,
         df: pd.DataFrame,
         progress_callback: Optional[Callable[[int, int], None]] = None,
+        status_callback: Optional[Callable[[str, float], None]] = None,
     ) -> Dict[str, Any]:
         """Run benchmark predictions, classification metrics, RAGAS generation metrics, and operations summary."""
         results: List[Dict[str, Any]] = []
@@ -151,7 +154,11 @@ class SupportSphereEvaluator:
 
         class_metrics = compute_classification_metrics(results)
         ops_metrics = compute_runtime_metrics(results, total_tickets=total, succeeded_count=succ_cnt, failed_count=fail_cnt)
-        ragas_metrics = self.ragas_evaluator.evaluate_generation(results)
+
+        if status_callback:
+            status_callback("🧠 **Running RAGAS LLM Judge evaluation across benchmark metrics...**", 0.65)
+
+        ragas_metrics = self.ragas_evaluator.evaluate_generation(results, status_callback=status_callback)
 
         summary = EvaluationSummary(
             total_evaluated=ops_metrics["total_evaluated"],
@@ -189,10 +196,11 @@ class SupportSphereEvaluator:
         self,
         filepath: str,
         progress_callback: Optional[Callable[[int, int], None]] = None,
+        status_callback: Optional[Callable[[str, float], None]] = None,
     ) -> tuple[EvaluationSummary, List[Dict[str, Any]]]:
         """Convenience method running benchmark from CSV path."""
         df = pd.read_csv(filepath)
-        eval_res = self.run_evaluation(df, progress_callback=progress_callback)
+        eval_res = self.run_evaluation(df, progress_callback=progress_callback, status_callback=status_callback)
         return eval_res["summary"], eval_res["predictions"]
 
 
