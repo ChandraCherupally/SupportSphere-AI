@@ -4,10 +4,8 @@
 - Everything else imports constants from here.
 """
 from __future__ import annotations
-
 import os
 from pathlib import Path
-
 from dotenv import load_dotenv
 
 # =============================================================================
@@ -29,16 +27,16 @@ PROMPTS_DIR = BASE_DIR / "ai"
 # Application & LLM Defaults
 # =============================================================================
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").lower()
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5.4-mini")
+LLM_PROVIDER: str = "openai"
+LLM_MODEL: str = "gpt-5.4-mini"
 
-DECISION_PROVIDER = os.getenv("DECISION_PROVIDER", LLM_PROVIDER).lower()
-DECISION_MODEL = os.getenv("DECISION_MODEL", LLM_MODEL)
+DECISION_PROVIDER: str = LLM_PROVIDER
+DECISION_MODEL: str = LLM_MODEL
 
-GENERATION_PROVIDER = os.getenv("GENERATION_PROVIDER", LLM_PROVIDER).lower()
-GENERATION_MODEL = os.getenv("GENERATION_MODEL", LLM_MODEL)
+GENERATION_PROVIDER: str = LLM_PROVIDER
+GENERATION_MODEL: str = LLM_MODEL
 
-LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.0"))
+LLM_TEMPERATURE: float = 0.0
 
 # =============================================================================
 # API Keys
@@ -48,7 +46,6 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "") or ""
 GOOGLE_API_KEY_EMBED = os.getenv("GOOGLE_API_KEY_EMBED", "") or ""
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "") or ""
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "") or ""
-HF_TOKEN = os.getenv("HF_TOKEN", "") or ""
 
 
 def get_api_key(provider: str) -> str:
@@ -67,10 +64,16 @@ def get_api_key(provider: str) -> str:
 # Embeddings
 # =============================================================================
 
-EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "google").lower()
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
-EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "768"))
-EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "100"))
+EMBEDDING_PROVIDER: str = "google"
+EMBEDDING_MODEL: str = "gemini-embedding-001"
+EMBEDDING_DIMENSION: int = 768
+EMBED_BATCH_SIZE: int = 100
+
+# =============================================================================
+# Vector Store
+# =============================================================================
+
+VECTOR_DB = os.getenv("VECTOR_DB", "pinecone").lower()
 
 # =============================================================================
 # Pinecone
@@ -87,35 +90,31 @@ PINECONE_METRIC = "cosine"
 # Chunking
 # =============================================================================
 
-MAX_SECTION_SIZE = int(os.getenv("MAX_SECTION_SIZE", "1200"))
-SECTION_OVERLAP = int(os.getenv("SECTION_OVERLAP", "150"))
+MAX_SECTION_SIZE: int = 1200
+SECTION_OVERLAP: int = 150
 
 # =============================================================================
 # Retrieval
 # =============================================================================
 
-SEARCH_MODE = os.getenv("SEARCH_MODE", "hybrid").lower()
+SEARCH_MODE: str = "hybrid"
 BM25_INDEX_PATH = ARTIFACTS_DIR / "bm25_index.pkl"
-VECTOR_TOP_K = int(os.getenv("VECTOR_TOP_K", "20"))
-BM25_TOP_K = int(os.getenv("BM25_TOP_K", "20"))
-FINAL_TOP_K = int(os.getenv("FINAL_TOP_K", "5"))
+VECTOR_TOP_K: int = 20
+BM25_TOP_K: int = 20
+FINAL_TOP_K: int = 10
 
 # =============================================================================
 # Context Builder
 # =============================================================================
 
-MAX_CONTEXT_CHUNKS = int(os.getenv("MAX_CONTEXT_CHUNKS", "10"))
-MAX_CONTEXT_TOKENS = int(os.getenv("MAX_CONTEXT_TOKENS", "6000"))
+MAX_CONTEXT_CHUNKS: int = 10
+MAX_CONTEXT_TOKENS: int = 6000
 
 # =============================================================================
 # Validation
 # =============================================================================
 
-SUPPORTED_LLM_PROVIDERS = {
-    "google",
-    "openai",
-    "groq",
-}
+SUPPORTED_LLM_PROVIDERS = {"google", "openai", "groq"}
 
 if DECISION_PROVIDER not in SUPPORTED_LLM_PROVIDERS:
     raise ValueError(f"Unsupported DECISION_PROVIDER: {DECISION_PROVIDER}")
@@ -123,9 +122,7 @@ if DECISION_PROVIDER not in SUPPORTED_LLM_PROVIDERS:
 if GENERATION_PROVIDER not in SUPPORTED_LLM_PROVIDERS:
     raise ValueError(f"Unsupported GENERATION_PROVIDER: {GENERATION_PROVIDER}")
 
-SUPPORTED_EMBEDDING_PROVIDERS = {
-    "google",
-}
+SUPPORTED_EMBEDDING_PROVIDERS = {"google"}
 
 if EMBEDDING_PROVIDER not in SUPPORTED_EMBEDDING_PROVIDERS:
     raise ValueError(f"Unsupported EMBEDDING_PROVIDER: {EMBEDDING_PROVIDER}")
@@ -135,12 +132,7 @@ if EMBEDDING_PROVIDER not in SUPPORTED_EMBEDDING_PROVIDERS:
 # =============================================================================
 
 DEFAULT_RERANKER = "none"
-AVAILABLE_RERANKERS = (
-    "none",
-    "cross_encoder",
-    "flashrank",
-    "llm",
-)
+AVAILABLE_RERANKERS = ("none", "cross_encoder", "flashrank","llm")
 CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 LLM_RERANKER_MODEL = "gemini-2.5-flash"
 FLASHRANK_MODEL = "ms-marco-MiniLM-L-12-v2"
