@@ -27,9 +27,8 @@ COPY pyproject.toml uv.lock ./
 # Does NOT use --index-strategy unsafe-best-match for deterministic reproducibility.
 RUN uv sync --locked --no-dev --no-install-project
 
-# Prune build cache, CUDA remnants (nvidia packages), and compiled bytecode from virtualenv
-RUN find /app/.venv -type d -name "nvidia" -exec rm -rf {} + 2>/dev/null || true \
-    && find /app/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true \
+# Prune compiled bytecode and cache from virtualenv
+RUN find /app/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true \
     && find /app/.venv -type f -name "*.pyc" -delete 2>/dev/null || true
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────

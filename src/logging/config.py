@@ -29,46 +29,47 @@ def setup_logging() -> None:
     formatter = logging.Formatter("%(asctime)s | %(levelname)-8s | %(name)s | %(message)s")
     fw_filter = FrameworkFilter()
 
-    # 1. application.log — business workflow (INFO+)
-    app_handler = RotatingFileHandler(
-        os.path.join(log_dir, "application.log"),
-        maxBytes=10 * 1024 * 1024,
-        backupCount=5,
-        encoding="utf-8",
-    )
-    app_handler.setLevel(logging.INFO)
-    app_handler.setFormatter(formatter)
-    app_handler.addFilter(fw_filter)
-
-    # 2. pipeline.log — stage node execution details (INFO+)
-    pipeline_handler = RotatingFileHandler(
-        os.path.join(log_dir, "pipeline.log"),
-        maxBytes=10 * 1024 * 1024,
-        backupCount=5,
-        encoding="utf-8",
-    )
-    pipeline_handler.setLevel(logging.INFO)
-    pipeline_handler.setFormatter(formatter)
-
-    # 3. errors.log — ERROR and above
-    errors_handler = RotatingFileHandler(
-        os.path.join(log_dir, "errors.log"),
-        maxBytes=10 * 1024 * 1024,
-        backupCount=5,
-        encoding="utf-8",
-    )
-    errors_handler.setLevel(logging.ERROR)
-    errors_handler.setFormatter(formatter)
-
-    # 4. Console handler
+    # 1. Console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     console_handler.addFilter(fw_filter)
 
-    root_logger.addHandler(app_handler)
-    root_logger.addHandler(pipeline_handler)
-    root_logger.addHandler(errors_handler)
+    # 2. File Handlers (application.log, pipeline.log, errors.log)
+    try:
+        app_handler = RotatingFileHandler(
+            os.path.join(log_dir, "application.log"),
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        app_handler.setLevel(logging.INFO)
+        app_handler.setFormatter(formatter)
+        app_handler.addFilter(fw_filter)
+
+        pipeline_handler = RotatingFileHandler(
+            os.path.join(log_dir, "pipeline.log"),
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        pipeline_handler.setLevel(logging.INFO)
+        pipeline_handler.setFormatter(formatter)
+
+        errors_handler = RotatingFileHandler(
+            os.path.join(log_dir, "errors.log"),
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,
+            encoding="utf-8",
+        )
+        errors_handler.setLevel(logging.ERROR)
+        errors_handler.setFormatter(formatter)
+
+        root_logger.addHandler(app_handler)
+        root_logger.addHandler(pipeline_handler)
+        root_logger.addHandler(errors_handler)
+    except Exception as e:
+        print(f"Warning: Could not initialize log files in '{log_dir}': {e}")
     root_logger.addHandler(console_handler)
 
     # Suppress noisy third-party frameworks
