@@ -196,7 +196,7 @@ class RagasEvaluator:
                 "metrics": [faithfulness, answer_relevancy, context_precision, context_recall, answer_correctness],
                 "llm": eval_llm,
                 "run_config": run_cfg,
-                "raise_exceptions": True,
+                "raise_exceptions": False,
             }
             if eval_embeddings is not None:
                 rag_eval_kwargs["embeddings"] = eval_embeddings
