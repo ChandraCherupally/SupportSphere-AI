@@ -140,7 +140,7 @@ class RagasEvaluator:
             try:
                 from langchain_google_genai import GoogleGenerativeAIEmbeddings
                 g_embed = GoogleGenerativeAIEmbeddings(
-                    model="models/text-embedding-004",
+                    model="gemini-embedding-001",
                     google_api_key=google_embed_key,
                 )
                 eval_embeddings = LangchainEmbeddingsWrapper(g_embed)

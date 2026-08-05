@@ -101,7 +101,7 @@ jobs:
 
             # 1. Prepare deployment directory
             mkdir -p ~/supportsphere-ai/data/experiments ~/supportsphere-ai/logs
-            chmod -R 777 ~/supportsphere-ai/data ~/supportsphere-ai/logs
+            sudo chmod -R 777 ~/supportsphere-ai/data ~/supportsphere-ai/logs || true
 
             # 2. Write production docker-compose.yml
             echo "Writing production docker-compose.yml..."
