@@ -126,8 +126,10 @@ jobs:
               "${{ secrets.DOCKERHUB_USERNAME }}" > ~/supportsphere-ai/.env
 
             # 4. Pull latest image from Docker Hub
-            echo "Cleaning unused Docker images to free disk space..."
+            echo "Pruning unused Docker objects, build cache, and system package caches..."
             docker system prune -af --volumes || true
+            docker builder prune -af || true
+            sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/* || true
 
             echo "Pulling latest image from Docker Hub..."
             cd ~/supportsphere-ai

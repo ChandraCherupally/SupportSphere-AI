@@ -156,23 +156,32 @@ def _render_evaluation_summary_tab(cfg: AppConfig) -> None:
             key="eval_model_select",
         )
 
+    # Validate Decision, Generation, and Evaluation provider API keys
+    key_errors = validate_runtime_keys(cfg)
     eval_key_err = validate_provider_key(eval_provider, cfg)
-    has_eval_key = eval_key_err is None
+    if eval_key_err:
+        eval_err_fmt = f"📊 **Evaluation Judge ({eval_provider})**: {eval_key_err}"
+        if eval_err_fmt not in key_errors and not any(eval_provider.lower() in e.lower() for e in key_errors):
+            key_errors.append(eval_err_fmt)
 
-    if not has_eval_key:
-        st.warning(f"⚠️ {eval_key_err}")
+    has_all_keys = len(key_errors) == 0
+
+    if not has_all_keys:
+        for err_msg in key_errors:
+            st.error(f"❌ {err_msg}")
 
     st.markdown("---")
 
     # -------------------------------------------------------------------------
     # 3. Run Evaluation Execution
     # -------------------------------------------------------------------------
-    can_run = dataset_exists and has_eval_key
+    can_run = dataset_exists and has_all_keys
 
     if st.button("🚀 Run Evaluation", width="stretch", disabled=not can_run):
         patch_agent_configs(cfg)
-        if not has_eval_key:
-            st.error(f"❌ {eval_key_err}")
+        if not has_all_keys:
+            for err_msg in key_errors:
+                st.error(f"❌ {err_msg}")
             return
         p_bar = st.progress(0.0)
         status_text = st.empty()
