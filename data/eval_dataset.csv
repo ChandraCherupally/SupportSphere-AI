@@ -1,31 +1,56 @@
 Issue,Subject,Company,Response,Product Area,Status,Request Type
-site is down & none of the pages are accessible,,None,Escalate to a human,,Escalated,bug
-"i signed up using google login on hackerrank community , so i do not have a separate hackerrank password. please delete my account
-",,HackerRank,"To delete your HackerRank account created via Google login, first set a password for your account, as Google login accounts do not have one by default.
+I notice that people I assigned the test in October of 2025 have not received new tests. How long do the tests stay active in the system.,Test Active in the system,HackerRank,"Hi,
 
-Follow these steps to set a password and delete your account:
 
-Go to the HackerRank login page and click ""Forgot your password?""
-Enter the email linked to your Google login and follow the instructions to reset and set a new password.
-Log in to your HackerRank account using the new password.
-Click your profile icon in the top-right corner and select Settings.
-Scroll to the Delete Accounts section.
-Click Delete Account and follow the prompts, entering your new password to confirm.
-
-Deleting your account will permanently remove all data and cannot be undone.",community,Replied,product_issue
-"One of my claude conversations has some private info, i forgot to make a temporary chat, is there anything
- else that can be done? like delete etc?",,Claude,"To delete an individual conversation:
-
-1. Navigate to the conversation you want to delete.
-
-2. Click on the name of the conversation at the top of the screen.
-
-3. Select either ""Delete"" from the options that appear:
+Tests in HackerRank remain active indefinitely unless a start and end time are set. 
+Without these, tests do not expire automatically.
 
 
 
-https://privacy.claude.com/en/articles/11117329-how-can-i-delete-or-rename-a-conversation",privacy,Replied,product_issue
-What is the name of the actor in Iron Man?,"Urgent, please help",None ,"I am sorry, this is out of scope from my capabilities",conversation_management,Replied,invalid
+To set expiration times, specify a start and end date/time in the test settings. After expiration:
+
+Invited candidates cannot access the test.
+The ""Invite"" button is disabled; no new invitations can be sent.
+
+
+To check or change expiration settings:
+
+Go to the test's Settings and select the General section.
+Update the Start date & time and End date & time fields as needed.
+To keep the test active indefinitely, clear these fields by clicking the clear icon (X).
+
+
+If the test has an expiration set, adjust these settings to enable new invitations.",screen,Replied,product_issue
+site is down & none of the pages are accessible,,None,"This appears to describe a platform-wide issue.
+Your request has been escalated to a human support agent.",,Escalated,bug
+"I'm noticing that you all have many default versions of roles. (e.g. front end developer for react, angular, vue.js, etc.) What do you consider best practice 
+for when to create a new test versus create a variant of the test? What are the advantages and disadvantages of using variants?","When should I create a variant versus
+ have a different test?",HackerRank,"Hi,
+
+
+Consider these guidelines when choosing between creating a new test or a variant:
+
+
+
+When to Use Test Variants:
+
+Create variants to adapt a single test to different candidate profiles, 
+such as roles with different tech stacks (React, Angular, Vue.js).
+Variants streamline assessments by showing candidates only relevant sections and generating role-specific reports.
+
+
+Advantages of Test Variants:
+
+Reduces the need to manage multiple tests, improving efficiency.
+Decreases maintenance while allowing scalable personalization.
+Ensures candidates are tested on relevant content.
+
+
+Disadvantages and Limitations of Test Variants:
+
+A test must have at least two variants to function; you cannot delete a variant if only two exist.
+Variants without logic are hidden from candidates until logic is added.",screen,Replied,product_issue
+What is the name of the actor in Iron Man?,"Urgent, please help",None ,"I am sorry, but we do not support the requested company. We only support HackerRank, Claude, and Visa.",conversation_management,Replied,invalid
 I bought Visa Traveller's Cheques from Citicorp and they were stolen in Lisbon last night. What do I do?,,Visa,"Call the issuer (Citicorp) immediately. 
 Freephone 1-800-645-6556 or collect 1-813-623-1709, Mon–Fri 6:30 am–2:30 pm EST. 
 
