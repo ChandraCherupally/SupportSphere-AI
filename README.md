@@ -15,9 +15,9 @@
 [![Pinecone](https://img.shields.io/badge/Pinecone-9.1+-000000?style=flat-square)](https://pinecone.io)
 [![NeMo Guardrails](https://img.shields.io/badge/NeMo_Guardrails-0.23+-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://github.com/NVIDIA/NeMo-Guardrails)
 [![RAGAS](https://img.shields.io/badge/RAGAS-0.4+-6366F1?style=flat-square)](https://github.com/explodinggradients/ragas)
-[![OpenAI](https://img.shields.io/badge/OpenAI-GPT_5.4_mini-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com)
-[![Google Gemini](https://img.shields.io/badge/Google-Gemini_2.5-4285F4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev)
-[![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036?style=flat-square)](https://groq.com)
+[![Docker](https://img.shields.io/badge/Docker-24.0+-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
+[![AWS EC2](https://img.shields.io/badge/AWS-EC2_Production-FF9900?style=flat-square&logo=amazon-aws&logoColor=white)](https://aws.amazon.com)
+[![CI/CD](https://img.shields.io/badge/GitHub_Actions-Automated_CD-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 </div>
@@ -266,7 +266,7 @@ PINECONE_INDEX_NAME=support-sphere-ai
 
 ## 🚀 Quick Start
 
-Launch the web dashboard with one command:
+Launch the web dashboard locally with one command:
 
 ```bash
 uv run streamlit run src/app.py
@@ -278,6 +278,60 @@ To run the automated test suite (18 unit tests):
 ```bash
 uv run pytest
 ```
+
+---
+
+## 🐳 Production Deployment & CI/CD Pipeline (AWS EC2 + Docker)
+
+> **For Beginners:** SupportSphere AI is fully containerized with **Docker** and automatically deployed to an **AWS EC2** instance using **GitHub Actions CI/CD workflows**.
+
+```
+[ Developer pushes code to GitHub main branch ]
+                       │
+                       ▼
+    1. 🧪 GitHub Actions CI (.github/workflows/ci.yml)
+       • Spins up Ubuntu runner
+       • Installs Python 3.12 & uv
+       • Runs 18 unit tests (pytest)
+                       │
+                       ▼ (Passes)
+    2. 🐳 GitHub Actions CD (.github/workflows/cd.yml)
+       • Builds production Docker image via Docker Buildx
+       • Pushes image to Docker Hub (supportsphere-ai:latest)
+       • Connects via SSH to AWS EC2 Instance (52.90.165.65)
+       • Auto-prunes old containers, dangling images & build cache to free disk space
+       • Generates runtime .env & docker-compose.yml from GitHub Secrets
+       • Restarts container stack gracefully (docker compose up -d)
+                       │
+                       ▼
+[ 🌐 Live Production Deployment: http://52.90.165.65:8501 ]
+```
+
+### Option A: Local Docker Execution (Zero Python Setup)
+
+Run the application inside a container on your local machine using Docker Desktop:
+
+```bash
+# 1. Build and start the container in detached mode
+docker compose up -d --build
+
+# 2. View live running container logs
+docker compose logs -f
+
+# 3. Stop the container
+docker compose down
+```
+
+### Option B: Deploying to Production AWS EC2 Instance
+
+1. **Provision EC2 Instance**: Launch an Ubuntu 24.04 LTS instance (e.g. `t3.medium` or `t3.large`) with port `8501` open in the Security Group.
+2. **Configure GitHub Secrets**: Add the following secrets in repository settings (`Settings -> Secrets and variables -> Actions`):
+   - `AWS_HOST`: Public IP of your EC2 instance (e.g. `52.90.165.65`)
+   - `AWS_USERNAME`: `ubuntu`
+   - `SSH_PRIVATE_KEY`: Content of your EC2 `.pem` SSH private key
+   - `DOCKERHUB_USERNAME` & `DOCKERHUB_TOKEN`: Docker Hub login credentials
+   - Provider keys: `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `GROQ_API_KEY`, `PINECONE_API_KEY`
+3. **Automated Release**: Pushing any code update to `main` branch automatically builds, tests, prunes storage, and updates the live EC2 server in ~3 minutes.
 
 ---
 
@@ -521,7 +575,11 @@ SupportSphere-AI/
 │   ├── runtime_config/                   # Dynamic runtime snapshot dataclass
 │   └── streamlit/                        # UI tab components (dashboard, debugger, evaluator)
 ├── vectordb_ingestion/                   # One-time documentation ingestion pipeline
-├── docs/                                 # Complete technical documentation (13 files)
+├── docs/                                 # Technical documentation (4 consolidated guides)
+│   ├── ARCHITECTURE.md                   # System design, 5-node state machine, retrieval & guardrails
+│   ├── DEPLOYMENT.md                     # Local setup, Docker containerization & AWS EC2 CI/CD
+│   ├── EVALUATION.md                     # RAGAS benchmarks, 46 experiments summary & config specs
+│   └── FAQ.md                            # Frequently asked questions, troubleshooting & recovery
 ├── data/
 │   ├── experiments/                      # 46 saved experiment JSON files
 │   ├── eval_dataset.csv                  # Master evaluation ground truth dataset
@@ -543,21 +601,12 @@ SupportSphere-AI/
 
 Comprehensive technical documentation is available in the [`docs/`](docs/) directory:
 
-| Document | What It Covers | Best For |
+| Document | What It Covers | Target Audience |
 |---|---|---|
-| 📑 [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) | High-level system architecture, state machine topology, full sequence diagrams | Architects, Senior Engineers |
-| 🏗️ [**SYSTEM_DESIGN.md**](docs/SYSTEM_DESIGN.md) | Design principles (KISS, SOLID), modularity decisions, error handling strategy | Lead Developers |
-| 🔍 [**RETRIEVAL_PIPELINE.md**](docs/RETRIEVAL_PIPELINE.md) | BM25 implementation, Pinecone vector search, RRF fusion, URL-capping, reranker factory | AI Engineers, Search Engineers |
-| 🧠 [**DECISION_ENGINE.md**](docs/DECISION_ENGINE.md) | 11-class intent classification schema, routing strategies, NeMo integration details | AI Engineers |
-| ✨ [**GENERATION_ENGINE.md**](docs/GENERATION_ENGINE.md) | Grounded prompt builder v3, anti-hallucination policies, citation format rules | Prompt Engineers |
-| 📊 [**EVALUATION.md**](docs/EVALUATION.md) | RAGAS metrics explained, classification accuracy, experiment management, cost tracking | Data Scientists, QA |
-| 🛡️ [**GUARDRAILS.md**](docs/GUARDRAILS.md) | NeMo Colang safety policies, custom Python action implementations | Security Engineers |
-| 📝 [**OBSERVABILITY.md**](docs/OBSERVABILITY.md) | 3-file logging architecture, node context tagging, telemetry summary block format | DevOps, SREs |
-| 🚀 [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) | Local setup, Docker containerization, cloud deployment guidelines | DevOps Engineers |
-| ⚙️ [**CONFIGURATION.md**](docs/CONFIGURATION.md) | Complete specification of all environment variables and runtime parameters | All Developers |
-| 🤝 [**CONTRIBUTING.md**](docs/CONTRIBUTING.md) | Contribution workflow, coding standards, branch strategy, PR instructions | Open Source Contributors |
-| 📜 [**CHANGELOG.md**](docs/CHANGELOG.md) | Keep-a-Changelog compliant release log with Semantic Versioning | All Users |
-| ❓ [**FAQ.md**](docs/FAQ.md) | Frequently asked technical and operational questions with verified answers | All Users |
+| 🏗️ [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) | LangGraph 5-node state machine, Hybrid Retrieval (BM25 + Pinecone), NVIDIA NeMo Guardrails, and logging telemetry | All Developers |
+| 🚀 [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) | Local `uv`/Python setup, Docker containerization, GitHub Actions CI/CD workflows, AWS EC2 server setup & automated storage pruning | DevOps & SREs |
+| 📊 [**EVALUATION.md**](docs/EVALUATION.md) | RAGAS benchmark metrics (Faithfulness, Relevancy, Precision, Recall, Correctness), 46 logged experiments summary, top configs & environment variables | Data Scientists & QA |
+| ❓ [**FAQ.md**](docs/FAQ.md) | Answers to common technical questions, error troubleshooting (disk space, permissions, API keys), and document re-ingestion instructions | All Users |
 
 ---
 

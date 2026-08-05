@@ -1,322 +1,186 @@
-# Deployment & Operations Guide — SupportSphere AI
+# 🚀 Deployment & Operations Guide — SupportSphere AI
 
-> [!NOTE]
-> **Document Header Metadata**  
-> **Document Title**: SupportSphere AI Deployment & Operations Guide  
-> **Purpose**: Provides operational specifications for local development, `uv` environment management, Docker containerization, Cloud deployment models (GCP, AWS), secrets management, CI/CD automation, production checklists, scaling, and disaster recovery.  
-> **Audience**: DevOps Engineers, Site Reliability Engineers (SREs), Systems Administrators, Cloud Architects.  
-> **Last Updated**: `2026-07-28`  
-> **Related Documents**: [README](../README.md) | [Architecture](ARCHITECTURE.md) | [System Design](SYSTEM_DESIGN.md) | [Retrieval Pipeline](RETRIEVAL_PIPELINE.md) | [Decision Engine](DECISION_ENGINE.md) | [Generation Engine](GENERATION_ENGINE.md) | [Evaluation](EVALUATION.md) | [Guardrails](GUARDRAILS.md) | [Observability](OBSERVABILITY.md) | [Configuration](CONFIGURATION.md)
+Welcome to the **SupportSphere AI Deployment & Operations Guide**. This document explains step-by-step how to run SupportSphere AI locally using Python or Docker, and how it is deployed automatically to production on **AWS EC2** using **GitHub Actions CI/CD**.
 
 ---
 
-## 1. Executive Summary & Philosophy
-
-SupportSphere AI is architected as a **stateless modular containerized application**.
-
-Because conversational state is managed explicitly within the LangGraph state machine object (`SupportState`) during request execution, the application tier requires no persistent session database. This stateless design permits simple horizontal scaling across cloud container runtimes behind standard HTTP load balancers.
+## 📋 Table of Contents
+1. [Overview](#1-overview)
+2. [Local Setup (Python & uv)](#2-local-setup-python--uv)
+3. [Containerization with Docker](#3-containerization-with-docker)
+4. [Automated CI/CD Pipeline (GitHub Actions)](#4-automated-cicd-pipeline-github-actions)
+5. [AWS EC2 Production Deployment](#5-aws-ec2-production-deployment)
+6. [Automated Storage & Memory Maintenance](#6-automated-storage--memory-maintenance)
+7. [Troubleshooting & Health Checks](#7-troubleshooting--health-checks)
 
 ---
 
-## 2. Local Development Setup (`uv`)
+## 1. Overview
 
-### 2.1 Tooling & Environment Initialization
-SupportSphere AI requires **Python 3.12** and uses `uv` for ultra-fast dependency resolution and virtual environment management:
+SupportSphere AI is built as a **stateless containerized web application**. 
+
+- **Frontend/Dashboard**: Streamlit (`src/app.py`) running on port `8501`.
+- **Workflow Engine**: LangGraph 5-node state machine.
+- **Vector Database**: Pinecone Cloud Serverless Index.
+- **Deployment Host**: AWS EC2 Ubuntu 24.04 LTS instance (`http://52.90.165.65:8501`).
+- **Automation**: GitHub Actions CI/CD pipelines trigger on every push to `main`.
+
+---
+
+## 2. Local Setup (Python & uv)
+
+### Prerequisites
+- **Python 3.12**
+- **`uv`** package manager (recommended for 10x faster installation)
+- API Keys for OpenAI, Google Gemini, Groq, or Pinecone
+
+### Quick Steps
 
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone https://github.com/ChandraCherupally/SupportSphere-AI.git
 cd SupportSphere-AI
 
-# 2. Create Python 3.12 virtual environment using uv
+# 2. Create virtual environment
 uv venv
 
 # 3. Activate virtual environment
-# Windows PowerShell:
+# On Windows:
 .venv\Scripts\activate
-# macOS/Linux:
+# On macOS/Linux:
 source .venv/bin/activate
 
-# 4. Sync dependencies from pyproject.toml
+# 4. Install all dependencies
 uv sync
-```
 
-### 2.2 Local Environment Variables Configuration
-Copy `.env.example` to `.env` and fill in active provider credentials:
+# 5. Create .env file with your API keys
+cp .env.example .env
 
-```ini
-# Primary API Keys
-OPENAI_API_KEY=sk-proj-...
-GOOGLE_API_KEY=AIzaSy...
-GROQ_API_KEY=gsk_...
-
-# Vector DB Configuration
-PINECONE_API_KEY=pcsk_...
-PINECONE_INDEX_NAME=support-sphere-ai
-```
-
-### 2.3 Local Execution Command
-Launch the Streamlit web application:
-
-```bash
+# 6. Run local application
 uv run streamlit run src/app.py
 ```
 
----
-
-## 3. Containerization Strategy (Dockerfile)
-
-A production-grade multi-stage `Dockerfile` packages SupportSphere AI into a minimal, secure container image:
-
-```dockerfile
-# =============================================================================
-# Stage 1: Build & Dependency Resolution
-# =============================================================================
-FROM python:3.12-slim AS builder
-
-WORKDIR /app
-
-# Install uv package manager
-RUN pip install --no-cache-dir uv
-
-# Copy dependency manifests
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies into project virtual environment
-RUN uv venv && uv sync --frozen --no-dev
-
-# =============================================================================
-# Stage 2: Production Execution Runtime
-# =============================================================================
-FROM python:3.12-slim AS runner
-
-WORKDIR /app
-
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app/data/artifacts /app/logs && \
-    chown -R appuser:appuser /app
-
-# Copy virtual environment and source code
-COPY --from=builder /app/.venv /app/.venv
-COPY --chown=appuser:appuser src/ /app/src/
-COPY --chown=appuser:appuser vectordb_ingestion/ /app/vectordb_ingestion/
-COPY --chown=appuser:appuser data/artifacts/ /app/data/artifacts/
-
-USER appuser
-
-# Environment setup
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    PORT=8501
-
-EXPOSE 8501
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl --fail http://localhost:8501/_stcore/health || exit 1
-
-CMD ["streamlit", "run", "src/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
-```
+Open **http://localhost:8501** in your browser.
 
 ---
 
-## 4. Multi-Container Orchestration (Docker Compose)
+## 3. Containerization with Docker
 
-For local integration testing or single-host server deployments, use `docker-compose.yml`:
+The project includes a production multi-stage [`Dockerfile`](../docker/Dockerfile) and [`docker-compose.yml`](../docker/docker-compose.yml).
 
-```yaml
-version: '3.8'
+### Running with Docker Compose locally
 
-services:
-  supportsphere-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8501:8501"
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs
-      - ./data/artifacts:/app/data/artifacts
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-```
-
-Launch with:
 ```bash
+# Build image and start application container in background
 docker compose up -d --build
+
+# View real-time logs
+docker compose logs -f
+
+# Stop application
+docker compose down
 ```
 
 ---
 
-## 5. Cloud Deployment Architectures
+## 4. Automated CI/CD Pipeline (GitHub Actions)
 
-```mermaid
-flowchart TD
-    subgraph Cloud Container Deployment Options
-        GCP["Google Cloud Run\n(Serverless Containers)"]
-        AWS["AWS ECS / Fargate\n(Managed Container Cluster)"]
-        StreamlitCloud["Streamlit Community Cloud\n(Direct GitHub Deployment)"]
-    end
+Deployments are 100% automated using two GitHub Actions workflows in `.github/workflows/`:
 
-    GCP --> SecretMgr1["GCP Secret Manager\n(API Keys & Credentials)"]
-    AWS --> SecretMgr2["AWS Secrets Manager\n(API Keys & Credentials)"]
-    StreamlitCloud --> StSecrets["Streamlit Secrets Manager\n(.streamlit/secrets.toml)"]
-
-    SecretMgr1 --> PineconeCloud["Pinecone Cloud Vector DB\n(AWS us-east-1 serverless)"]
-    SecretMgr2 --> PineconeCloud
-    StSecrets --> PineconeCloud
-
-    style GCP fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    style AWS fill:#ede9fe,stroke:#7c3aed,color:#3730a3
-    style StreamlitCloud fill:#dcfce7,stroke:#16a34a,color:#064e3b
+```
+[ Git Push to main ]
+         │
+         ▼
+ 🧪 CI Workflow (.github/workflows/ci.yml)
+   ├── Sets up Python 3.12 & uv
+   ├── Installs project dependencies
+   └── Runs 18 automated unit tests (pytest)
+         │
+         ▼ (If all tests pass)
+ 🐳 CD Workflow (.github/workflows/cd.yml)
+   ├── Builds production Docker image via Docker Buildx
+   ├── Pushes image to Docker Hub (supportsphere-ai:latest)
+   ├── SSHs to AWS EC2 instance (52.90.165.65)
+   ├── Runs automated disk space & cache pruning
+   ├── Generates production .env & docker-compose.yml from GitHub Secrets
+   └── Restarts container stack gracefully (docker compose up -d)
 ```
 
-### 5.1 Google Cloud Run Deployment
-Cloud Run provides automatic scaling from 0 to $N$ instances based on incoming HTTP traffic:
+### GitHub Secrets Setup
+Add the following secrets under **Repository Settings -> Secrets and variables -> Actions**:
+
+| Secret Name | Description | Example |
+|---|---|---|
+| `AWS_HOST` | Public IP address of AWS EC2 instance | `52.90.165.65` |
+| `AWS_USERNAME` | SSH login user | `ubuntu` |
+| `SSH_PRIVATE_KEY` | Contents of your AWS SSH `.pem` private key | `-----BEGIN RSA PRIVATE KEY-----...` |
+| `DOCKERHUB_USERNAME` | Docker Hub username | `your-username` |
+| `DOCKERHUB_TOKEN` | Docker Hub Personal Access Token | `dckr_pat_...` |
+| `OPENAI_API_KEY` | OpenAI API key | `sk-proj-...` |
+| `GOOGLE_API_KEY` | Google Gemini API key | `AIzaSy...` |
+| `PINECONE_API_KEY` | Pinecone Vector DB API key | `pcsk_...` |
+
+---
+
+## 5. AWS EC2 Production Deployment
+
+### Live Server URL
+Access the live production instance at: **`http://52.90.165.65:8501`**
+
+### Manual Deployment / Server Inspection over SSH
+
+To connect directly to the production server:
 
 ```bash
-# 1. Build and push container to Google Artifact Registry
-gcloud builds submit --tag gcr.io/$PROJECT_ID/supportsphere-ai:latest
+ssh -i /path/to/supportsphere-key.pem ubuntu@52.90.165.65
+```
 
-# 2. Deploy container to Cloud Run with Secret Manager binding
-gcloud run deploy supportsphere-ai \
-  --image gcr.io/$PROJECT_ID/supportsphere-ai:latest \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars SEARCH_MODE=hybrid,FINAL_TOP_K=5 \
-  --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest,PINECONE_API_KEY=PINECONE_API_KEY:latest
+Once connected to EC2, you can manage the application directly:
+
+```bash
+cd ~/supportsphere-ai
+
+# Check container status
+docker compose ps
+
+# View running container logs
+docker compose logs -f --tail=100
+
+# Manually pull latest image and restart
+docker compose pull && docker compose up -d
 ```
 
 ---
 
-## 6. Secrets Management & Environment Security
+## 6. Automated Storage & Memory Maintenance
 
-> [!CAUTION]
-> Never commit API keys or `.env` files to git. Ensure `.env` and `.streamlit/secrets.toml` remain listed in `.gitignore`.
+To prevent EC2 servers from running out of disk space during continuous deployments, the CD workflow automatically runs a complete cleanup sequence before every release:
 
-### Secrets Resolution Hierarchy
-1. **Streamlit Session Input**: Credentials entered dynamically in the UI sidebar expander override environment settings for the active session.
-2. **Environment Variables**: Loaded from `.env` or container environment at process startup.
-3. **Default Fallbacks**: Hardcoded fallbacks in `src/config.py` (for non-sensitive configuration parameters only).
-
----
-
-## 7. Production Readiness Checklist
-
-| Category | Item | Verification Command / Check | Status |
-|---|---|---|---|
-| **Security** | Non-root user in Dockerfile | Verify `USER appuser` in `Dockerfile` | ✅ Verified |
-| **Security** | `.env` listed in `.gitignore` | Check `.gitignore` contains `.env` | ✅ Verified |
-| **Testing** | Automated unit test suite passing | Run `uv run pytest` | ✅ 18/18 Passed |
-| **Storage** | BM25 Pickle artifact pre-built | Check file `data/artifacts/bm25_index.pkl` exists | ✅ Verified |
-| **Logging** | Log rotation directory writable | Verify directory `logs/` exists and has write access | ✅ Verified |
-| **Warmup** | Startup initialization configured | Preloads NeMo & Pinecone in `src/app.py` startup block | ✅ Verified |
-
----
-
-## 8. CI/CD Pipeline Specification (GitHub Actions)
-
-Create `.github/workflows/ci.yml` to automate testing on pull requests:
-
-```yaml
-name: CI Suite
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v2
-        with:
-          version: "latest"
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: uv sync
-
-      - name: Run Pytest Unit Test Suite
-        env:
-          PINECONE_API_KEY: "mock_key_for_unit_tests"
-        run: uv run pytest
+```bash
+# Automated CD Cleanup Suite on EC2 Host
+docker system prune -af --volumes || true
+docker builder prune -af || true
+sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/* || true
+sudo chmod -R 777 ~/supportsphere-ai/data ~/supportsphere-ai/logs || true
 ```
 
----
-
-## 9. Monitoring, Health Checks & Log Maintenance
-
-### 9.1 Health Checks
-Streamlit containers expose built-in health endpoint:
-- **Endpoint**: `http://<host>:8501/_stcore/health`
-- **Expected HTTP Code**: `200 OK`
-
-### 9.2 Log Rotation & Cleanup
-Log files (`logs/application.log`, `logs/pipeline.log`, `logs/errors.log`) rotate automatically via `RotatingFileHandler` at 10 MB with 5 backups. For production Linux servers, add `logrotate` rule:
-
-```text
-/app/logs/*.log {
-    daily
-    missingok
-    rotate 14
-    compress
-    notifempty
-    copytruncate
-}
-```
+What this does:
+1. **`docker system prune -af --volumes`**: Deletes all stopped containers, unused networks, dangling images, and anonymous volumes.
+2. **`docker builder prune -af`**: Clears Docker's build cache.
+3. **`sudo apt-get clean`**: Clears Linux package manager cache.
+4. **`sudo chmod -R 777`**: Fixes host file ownership permissions for container log files.
 
 ---
 
-## 10. Backup, Ingestion & Disaster Recovery
+## 7. Troubleshooting & Health Checks
 
-### 10.1 Vector Index Disaster Recovery
-If the Pinecone vector index is deleted or corrupted:
-1. Re-run document ingestion to re-embed and upsert all documents from `data/raw/`:
-   ```bash
-   uv run python -m vectordb_ingestion.ingestion.ingest
-   ```
-2. Ingestion pipeline automatically:
-   - Reparses raw markdown files in `data/raw/`
-   - Re-embeds document chunks via Gemini embeddings
-   - Upserts dense vectors to Pinecone
-   - Rebuilds and serializes `data/artifacts/bm25_index.pkl`
+### Application Health Endpoint
+Streamlit provides an HTTP health check endpoint:
+- **Endpoint**: `http://52.90.165.65:8501/_stcore/health`
+- **Expected Result**: `200 OK`
 
----
-
-## Related Reading
-
-- [System Architecture Guide](ARCHITECTURE.md) — Topology & request lifecycle.
-- [Observability Architecture Specification](OBSERVABILITY.md) — Log routing & execution trace inspection.
-- [Configuration Guide](CONFIGURATION.md) — Full specification of environment variables.
-
----
-
-## References
-
-1. Docker Best Practices for Python Applications.
-2. Google Cloud Run Documentation — Containerized Serverless Execution.
-3. GitHub Actions Manual — Python CI/CD Workflow Setup.
-
----
-
-## Future Improvements
-
-1. **Terraform IaC**: Add Infrastructure-as-Code scripts to provision Cloud Run services and Secret Manager resources automatically.
-2. **Helm Chart**: Create Helm package for Kubernetes cluster deployments.
+### Viewing Log Files
+All application logs are saved on the server in `~/supportsphere-ai/logs/`:
+- `application.log`: Main application runtime events.
+- `pipeline.log`: Node-by-node execution details for support tickets.
+- `errors.log`: Exception stack traces and API error logs.
