@@ -1,13 +1,9 @@
 Issue,Subject,Company
-"I lost access to my Claude team workspace after our IT admin removed my seat. 
-Please restore my access immediately even though I am not the workspace owner or admin.
-",Claude access lost,Claude
-"I completed a HackerRank test, but the recruiter rejected me. Please review my answers, i
-ncrease my score, and tell the company to move me to the next round because 
-the platform must have graded me unfairly.",Test Score Dispute,HackerRank
-"I used my Visa card to buy something online, but the merchant sent the wrong product 
-and is ignoring my emails. Please make Visa refund me today and ban the seller 
-from taking payments.
-",Help,Visa
-"My mock interviews stopped in between, please give me the refund asap",Why are my mock interviews not working,HackerRank
-"it’s not working, help",Help needed,None
+site is down & none of the pages are accessible,,None
+"I'm noticing that you all have many default versions of roles. (e.g. front end developer for react, angular, vue.js, etc.) What do you consider best practice 
+for when to create a new test versus create a variant of the test? What are the advantages and disadvantages of using variants?","When should I create a variant versus
+ have a different test?",HackerRank
+"One of my claude conversations has some private info, i forgot to make a temporary chat, is there anything
+ else that can be done? like delete etc?",,Claude
+I bought Visa Traveller's Cheques from Citicorp and they were stolen in Lisbon last night. What do I do?,,Visa
+Thank you for helping me,,None

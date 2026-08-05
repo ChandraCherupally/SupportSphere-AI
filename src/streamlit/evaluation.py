@@ -20,7 +20,7 @@ from src.billing.catalog import get_supported_models
 from src.evaluation.evaluation_models import EvaluationSummary
 from src.evaluation.evaluator import SupportSphereEvaluator
 from src.evaluation.experiment_manager import load_all_experiments, save_experiment
-from src.streamlit.utils import AppConfig, patch_agent_configs, validate_provider_key
+from src.streamlit.utils import AppConfig, patch_agent_configs, validate_provider_key, validate_runtime_keys
 
 logger = logging.getLogger("SupportSphere")
 
