@@ -71,7 +71,7 @@ EXPOSE 8501
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8501/_stcore/health || python -c "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')" || exit 1
 
-RUN chown -R appuser:appgroup /app
+RUN mkdir -p /app/logs /app/data && chown -R appuser:appgroup /app
 
 # Switch to non-privileged user
 USER appuser
