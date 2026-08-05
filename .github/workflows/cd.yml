@@ -1,0 +1,173 @@
+# =============================================================
+# SupportSphere-AI — Continuous Deployment (CD)
+# =============================================================
+# Responsibility: deploy to production after CI passes.
+#
+# This workflow is intentionally NOT triggered by git push.
+# It is triggered by workflow_run so that deployment is
+# guaranteed to happen only after the CI workflow has
+# completed successfully. If CI fails, this workflow
+# never starts — Docker Hub receives no image, EC2 is
+# never touched.
+#
+# Pipeline:
+#   1. Checkout repository          (needed to read docker/ files)
+#   2. Log in to Docker Hub
+#   3. Set up Docker Buildx
+#   4. Build & push image           (latest + SHA tags)
+#   5. SSH into EC2 instance
+#   6. Prepare deployment directory on server
+#   7. Write production docker-compose.yml
+#   8. Generate runtime .env from GitHub Secrets
+#   9. Pull latest image from Docker Hub
+#   10. Restart application stack
+#   11. Clean old Docker images
+#   12. Health check & verification
+# =============================================================
+
+name: CD
+
+on:
+  # Trigger CD only after the CI workflow completes successfully.
+  workflow_run:
+    workflows:
+      - CI # must match the name: field in ci.yml exactly
+    types:
+      - completed
+
+  # Allow manual re-deployment from the GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Push & Deploy
+    runs-on: ubuntu-latest
+
+    # Only run when CI has completed successfully (or manual trigger)
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      # ---------------------------------------------------------
+      # 1. Checkout repository
+      # ---------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------
+      # 2. Log in to Docker Hub
+      # ---------------------------------------------------------
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ---------------------------------------------------------
+      # 3. Set up Docker Buildx
+      # ---------------------------------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---------------------------------------------------------
+      # 4. Build and push Docker image
+      # ---------------------------------------------------------
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/supportsphere-ai:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/supportsphere-ai:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ---------------------------------------------------------
+      # 5. SSH into EC2 & Deploy Container Stack
+      # ---------------------------------------------------------
+      - name: Deploy to AWS EC2 over SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            echo "🚀 Starting SupportSphere AI Production Deployment..."
+
+            # 1. Prepare deployment directory
+            mkdir -p ~/supportsphere-ai/data ~/supportsphere-ai/logs
+
+            # 2. Write production docker-compose.yml
+            echo "Writing production docker-compose.yml..."
+            cat > ~/supportsphere-ai/docker-compose.yml << 'COMPOSE'
+            services:
+              supportsphere-ai:
+                image: ${IMAGE_NAME}:latest
+                container_name: supportsphere-ai
+                ports:
+                  - "8501:8501"
+                env_file:
+                  - .env
+                volumes:
+                  - ./data:/app/data
+                  - ./logs:/app/logs
+                restart: unless-stopped
+                working_dir: /app
+            COMPOSE
+
+            # 3. Generate runtime .env from GitHub Secrets
+            echo "Creating runtime environment..."
+            cat > ~/supportsphere-ai/.env << 'ENV'
+            # AI Provider Keys
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+            GOOGLE_API_KEY_EMBED=${{ secrets.GOOGLE_API_KEY_EMBED }}
+            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+
+            # Vector DB / Pinecone
+            VECTOR_DB=${{ secrets.VECTOR_DB }}
+            PINECONE_API_KEY=${{ secrets.PINECONE_API_KEY }}
+            PINECONE_INDEX_NAME=${{ secrets.PINECONE_INDEX_NAME }}
+            PINECONE_CLOUD=${{ secrets.PINECONE_CLOUD }}
+            PINECONE_REGION=${{ secrets.PINECONE_REGION }}
+
+            # LangSmith Observability
+            LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING }}
+            LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT }}
+            LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
+            LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
+
+            # Docker Image Reference
+            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/supportsphere-ai
+            ENV
+
+            # 4. Pull latest image from Docker Hub
+            echo "Pulling latest image from Docker Hub..."
+            cd ~/supportsphere-ai
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            docker compose pull
+
+            # 5. Restart application
+            echo "Restarting application stack..."
+            docker compose up -d --remove-orphans
+
+            # 6. Clean old Docker images
+            echo "Cleaning dangling Docker images..."
+            docker image prune -f
+
+            # 7. Health check and verification
+            echo "Running application health check..."
+            sleep 10
+
+            if docker ps --filter "name=supportsphere-ai" --filter "status=running" | grep -q "supportsphere-ai"; then
+              echo "✅ Deployment completed successfully! Container supportsphere-ai is healthy."
+            else
+              echo "❌ Health check failed — container supportsphere-ai is not running!"
+              docker compose logs --tail 50
+              exit 1
+            fi

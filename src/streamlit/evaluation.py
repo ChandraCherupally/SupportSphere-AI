@@ -20,7 +20,7 @@ from src.billing.catalog import get_supported_models
 from src.evaluation.evaluation_models import EvaluationSummary
 from src.evaluation.evaluator import SupportSphereEvaluator
 from src.evaluation.experiment_manager import load_all_experiments, save_experiment
-from src.streamlit.utils import AppConfig, patch_agent_configs
+from src.streamlit.utils import AppConfig, patch_agent_configs, validate_provider_key
 
 logger = logging.getLogger("SupportSphere")
 
@@ -81,6 +81,8 @@ def render_evaluation(cfg: AppConfig) -> None:
 
 def _render_evaluation_summary_tab(cfg: AppConfig) -> None:
     """Tab 1: Evaluation Summary workflow."""
+    patch_agent_configs(cfg)
+
     # -------------------------------------------------------------------------
     # 1. Benchmark Dataset & Compact Preview
     # -------------------------------------------------------------------------
@@ -152,11 +154,11 @@ def _render_evaluation_summary_tab(cfg: AppConfig) -> None:
             key="eval_model_select",
         )
 
-    eval_api_key = src_config.get_api_key(eval_provider)
-    has_eval_key = bool(eval_api_key)
+    eval_key_err = validate_provider_key(eval_provider, cfg)
+    has_eval_key = eval_key_err is None
 
     if not has_eval_key:
-        st.warning(f"⚠️ RAGAS evaluation requires a configured Evaluation Provider and API Key for '{eval_provider}'.")
+        st.warning(f"⚠️ {eval_key_err}")
 
     st.markdown("---")
 
@@ -167,6 +169,9 @@ def _render_evaluation_summary_tab(cfg: AppConfig) -> None:
 
     if st.button("🚀 Run Evaluation", width="stretch", disabled=not can_run):
         patch_agent_configs(cfg)
+        if not has_eval_key:
+            st.error(f"❌ {eval_key_err}")
+            return
         p_bar = st.progress(0.0)
         status_text = st.empty()
 

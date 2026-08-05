@@ -1,0 +1,57 @@
+# =============================================================================
+# SupportSphere AI — Production Docker Compose
+# =============================================================================
+# Services:
+#   supportsphere  – Main Streamlit AI Support Application
+# =============================================================================
+
+services:
+
+  supportsphere:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: supportsphere-ai:latest
+    container_name: supportsphere-ai
+    ports:
+      - "8501:8501"
+
+    # Environment variables loaded from .env in project root
+    env_file:
+      - ../.env
+
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+
+      # LangSmith Tracing
+      LANGSMITH_TRACING: "${LANGSMITH_TRACING:-false}"
+      LANGSMITH_ENDPOINT: "${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}"
+      LANGSMITH_PROJECT: "${LANGSMITH_PROJECT:-supportsphere-ai}"
+
+      # Vector Database Configuration
+      VECTOR_DB: "${VECTOR_DB:-pinecone}"
+      PINECONE_INDEX_NAME: "${PINECONE_INDEX_NAME:-support-sphere-ai}"
+      PINECONE_CLOUD: "${PINECONE_CLOUD:-aws}"
+      PINECONE_REGION: "${PINECONE_REGION:-us-east-1}"
+
+    volumes:
+      # Mount data and logs directories for data persistence
+      - ../data:/app/data
+      - ../logs:/app/logs
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8501/_stcore/health || python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')\""]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+        reservations:
+          memory: 1g

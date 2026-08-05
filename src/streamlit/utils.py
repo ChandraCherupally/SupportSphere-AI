@@ -4,9 +4,9 @@ Shared Streamlit UI utilities and formatting helpers.
 
 from __future__ import annotations
 
+import os
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import src.config as src_config
 
@@ -62,13 +62,41 @@ def patch_agent_configs(cfg: AppConfig) -> None:
     src_config.GENERATION_PROVIDER = cfg.generation_provider.lower()
     src_config.GENERATION_MODEL = cfg.generation_model
 
-    src_config.GOOGLE_API_KEY = cfg.google_key or getattr(src_config, "GOOGLE_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "") or ""
-    src_config.OPENAI_API_KEY = cfg.openai_key or getattr(src_config, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or ""
-    src_config.GROQ_API_KEY = cfg.groq_key or getattr(src_config, "GROQ_API_KEY", "") or os.getenv("GROQ_API_KEY", "") or ""
+    src_config.GOOGLE_API_KEY = cfg.google_key.strip()
+    src_config.OPENAI_API_KEY = cfg.openai_key.strip()
+    src_config.GROQ_API_KEY = cfg.groq_key.strip()
 
     src_config.FINAL_TOP_K = cfg.top_k
     src_config.SEARCH_MODE = cfg.search_mode.lower()
     src_config.RERANKER = cfg.reranker.lower()
+
+
+def validate_provider_key(provider: str, cfg: AppConfig) -> str | None:
+    """Validate that the required API Key for a given provider is entered in API Credentials."""
+    p = provider.lower()
+    if p == "google" and not cfg.google_key.strip():
+        return "Google API Key is missing. Please enter your Google API Key under 'API Credentials' in the sidebar."
+    if p == "openai" and not cfg.openai_key.strip():
+        return "OpenAI API Key is missing. Please enter your OpenAI API Key under 'API Credentials' in the sidebar."
+    if p == "groq" and not cfg.groq_key.strip():
+        return "Groq API Key is missing. Please enter your Groq API Key under 'API Credentials' in the sidebar."
+    return None
+
+
+def validate_runtime_keys(cfg: AppConfig) -> list[str]:
+    """Validate required API keys for Decision and Generation engines."""
+    errors = []
+    dec_err = validate_provider_key(cfg.decision_provider, cfg)
+    if dec_err:
+        errors.append(f"🧠 **Decision Engine ({cfg.decision_provider})**: {dec_err}")
+
+    gen_err = validate_provider_key(cfg.generation_provider, cfg)
+    if gen_err:
+        # Avoid duplicate error message if Decision and Generation use same provider
+        if cfg.generation_provider.lower() != cfg.decision_provider.lower() or not dec_err:
+            errors.append(f"✨ **Generation Engine ({cfg.generation_provider})**: {gen_err}")
+
+    return errors
 
 
 def get_html_badge(text: str, badge_type: str = "info") -> str:

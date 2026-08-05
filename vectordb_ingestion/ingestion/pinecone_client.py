@@ -1,7 +1,9 @@
+import os
+import src.config as src_config
 from pinecone import Pinecone, ServerlessSpec
 
+# pyrefly: ignore [missing-import]
 from src.config import (
-    PINECONE_API_KEY,
     PINECONE_INDEX_NAME,
     PINECONE_CLOUD,
     PINECONE_REGION,
@@ -17,9 +19,15 @@ class PineconeClient:
     _instance = None
 
     def __new__(cls):
+        api_key = os.getenv("PINECONE_API_KEY") or getattr(src_config, "PINECONE_API_KEY", "")
+        if not api_key:
+            raise ValueError(
+                "PINECONE_API_KEY environment variable is missing or empty. "
+                "Please verify PINECONE_API_KEY is set in your .env file."
+            )
         if cls._instance is None:
             instance = super(PineconeClient, cls).__new__(cls)
-            instance.pc = Pinecone(api_key=PINECONE_API_KEY)
+            instance.pc = Pinecone(api_key=api_key)
             instance.index = instance._get_index()
             cls._instance = instance
         return cls._instance

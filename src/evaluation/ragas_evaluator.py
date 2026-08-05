@@ -4,7 +4,7 @@ Clean implementation closely aligned with official RAGAS notebook examples.
 """
 
 from __future__ import annotations
-
+import os
 import logging
 import re
 import sys
@@ -19,6 +19,7 @@ if "langchain_community.chat_models.vertexai" not in sys.modules:
 
 from datasets import Dataset
 from ragas import evaluate
+from ragas.embeddings import LangchainEmbeddingsWrapper
 from ragas.llms import LangchainLLMWrapper
 from ragas.run_config import RunConfig
 from ragas.metrics._answer_correctness import answer_correctness
@@ -30,6 +31,8 @@ from ragas.metrics._faithfulness import faithfulness
 import src.config as src_config
 from src.ai.client import LLMClient
 import pandas as pd
+
+logger = logging.getLogger("SupportSphere")
 
 def _extract_metric_val(df: Any, idx: int, *col_names: str) -> float:
     """Safely extract a metric value from RAGAS evaluation pandas DataFrame by matching possible column aliases."""
@@ -118,9 +121,40 @@ class RagasEvaluator:
         eval_llm = LangchainLLMWrapper(chat_model)
         run_cfg = RunConfig(timeout=180, max_retries=10, max_workers=2)
 
-        # Ensure RAGAS metrics do not force temperature=0.3 or temperature=0.01 on APIs that reject non-1 temperature
+        # 2b. Configure explicit embeddings for RAGAS to avoid default OpenAI fallback
+        eval_embeddings = None
+        google_embed_key = (
+            getattr(src_config, "GOOGLE_API_KEY", "")
+            or getattr(src_config, "GOOGLE_API_KEY_EMBED", "")
+            or os.getenv("GOOGLE_API_KEY_EMBED", "")
+            or os.getenv("GOOGLE_API_KEY", "")
+        )
+        openai_embed_key = getattr(src_config, "OPENAI_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
+
+        if google_embed_key:
+            try:
+                from langchain_google_genai import GoogleGenerativeAIEmbeddings
+                g_embed = GoogleGenerativeAIEmbeddings(
+                    model="models/embedding-001",
+                    google_api_key=google_embed_key,
+                )
+                eval_embeddings = LangchainEmbeddingsWrapper(g_embed)
+            except Exception as e:
+                logger.warning("Failed to initialize GoogleGenerativeAIEmbeddings for RAGAS: %s", e)
+
+        if eval_embeddings is None and openai_embed_key:
+            try:
+                from langchain_openai import OpenAIEmbeddings
+                o_embed = OpenAIEmbeddings(openai_api_key=openai_embed_key)
+                eval_embeddings = LangchainEmbeddingsWrapper(o_embed)
+            except Exception as e:
+                logger.warning("Failed to initialize OpenAIEmbeddings for RAGAS: %s", e)
+
+        # Ensure RAGAS metrics use explicit LLM and Embeddings
         for m in (faithfulness, answer_relevancy, context_precision, context_recall, answer_correctness):
             m.llm = eval_llm
+            if eval_embeddings is not None:
+                m.embeddings = eval_embeddings
             if hasattr(getattr(m.llm, "langchain_llm", None), "temperature"):
                 try:
                     m.llm.langchain_llm.temperature = None
@@ -152,13 +186,17 @@ class RagasEvaluator:
                     "reference": [s["reference"] for s in rag_samples],
                 }
             )
-            ragas_res = evaluate(
-                eval_dataset,
-                metrics=[faithfulness, answer_relevancy, context_precision, context_recall, answer_correctness],
-                llm=eval_llm,
-                run_config=run_cfg,
-                raise_exceptions=False,
-            )
+            rag_eval_kwargs = {
+                "dataset": eval_dataset,
+                "metrics": [faithfulness, answer_relevancy, context_precision, context_recall, answer_correctness],
+                "llm": eval_llm,
+                "run_config": run_cfg,
+                "raise_exceptions": False,
+            }
+            if eval_embeddings is not None:
+                rag_eval_kwargs["embeddings"] = eval_embeddings
+
+            ragas_res = evaluate(**rag_eval_kwargs)
             scores_df = ragas_res.to_pandas()
 
             for idx, p in enumerate(rag_preds):
@@ -207,13 +245,17 @@ class RagasEvaluator:
                     "reference": [s["reference"] for s in direct_samples],
                 }
             )
-            direct_res = evaluate(
-                direct_dataset,
-                metrics=[answer_correctness],
-                llm=eval_llm,
-                run_config=run_cfg,
-                raise_exceptions=False,
-            )
+            direct_eval_kwargs = {
+                "dataset": direct_dataset,
+                "metrics": [answer_correctness],
+                "llm": eval_llm,
+                "run_config": run_cfg,
+                "raise_exceptions": False,
+            }
+            if eval_embeddings is not None:
+                direct_eval_kwargs["embeddings"] = eval_embeddings
+
+            direct_res = evaluate(**direct_eval_kwargs)
             direct_scores_df = direct_res.to_pandas()
 
             for idx, p in enumerate(direct_preds):

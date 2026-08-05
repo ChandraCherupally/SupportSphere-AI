@@ -98,25 +98,28 @@ class LLMClient:
         if prov_clean == "google":
             from langchain_google_genai import ChatGoogleGenerativeAI
 
-            kwargs: Dict[str, Any] = {"model": model_name}
+            kwargs: Dict[str, Any] = {
+                "model": model_name,
+                "google_api_key": key_str or "",
+            }
             if not is_temp_restricted:
                 kwargs["temperature"] = temp
-            if key_str:
-                kwargs["google_api_key"] = key_str
             model = ChatGoogleGenerativeAI(**kwargs)
         elif prov_clean == "openai":
-            kwargs: Dict[str, Any] = {"model": model_name}
+            kwargs: Dict[str, Any] = {
+                "model": model_name,
+                "api_key": key_str or "",
+            }
             if not is_temp_restricted:
                 kwargs["temperature"] = temp
-            if key_str:
-                kwargs["api_key"] = key_str
             model = SafeChatOpenAI(**kwargs)
         elif prov_clean == "groq":
-            kwargs: Dict[str, Any] = {"model": model_name}
+            kwargs: Dict[str, Any] = {
+                "model": model_name,
+                "api_key": key_str or "",
+            }
             if not is_temp_restricted:
                 kwargs["temperature"] = temp
-            if key_str:
-                kwargs["api_key"] = key_str
             model = SafeChatGroq(**kwargs)
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")

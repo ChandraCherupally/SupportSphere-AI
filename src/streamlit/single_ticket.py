@@ -10,7 +10,7 @@ import streamlit as st
 
 from src.ai.models import AgentResponse, DecisionResult, SupportTicket
 from src.graph.support_agent import SupportAgent
-from src.streamlit.utils import AppConfig, get_html_badge, patch_agent_configs
+from src.streamlit.utils import AppConfig, get_html_badge, patch_agent_configs, validate_runtime_keys
 
 logger = logging.getLogger("SupportSphere")
 
@@ -97,6 +97,11 @@ def render_single_ticket(cfg: AppConfig) -> None:
             return
 
         patch_agent_configs(cfg)
+        key_errors = validate_runtime_keys(cfg)
+        if key_errors:
+            for err in key_errors:
+                st.error(f"❌ {err}")
+            return
 
         company_val = "" if company == "None" else company
 

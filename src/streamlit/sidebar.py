@@ -92,19 +92,19 @@ def render_sidebar() -> AppConfig:
         with st.expander("🔑 API Credentials", expanded=False):
             google_key = st.text_input(
                 "Google API Key",
-                value=os.getenv("GOOGLE_API_KEY", getattr(src_config, "GOOGLE_API_KEY", "")),
+                value="",
                 type="password",
                 key="sb_google_key",
             )
             openai_key = st.text_input(
                 "OpenAI API Key",
-                value=os.getenv("OPENAI_API_KEY", getattr(src_config, "OPENAI_API_KEY", "")),
+                value="",
                 type="password",
                 key="sb_openai_key",
             )
             groq_key = st.text_input(
                 "Groq API Key",
-                value=os.getenv("GROQ_API_KEY", getattr(src_config, "GROQ_API_KEY", "")),
+                value="",
                 type="password",
                 key="sb_groq_key",
             )

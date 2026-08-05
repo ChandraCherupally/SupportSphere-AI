@@ -14,7 +14,7 @@ class VectorSearch:
 
     def __init__(self):
         self.index = PineconeClient().get_index()
-        embed_api_key = config.GOOGLE_API_KEY_EMBED or config.GOOGLE_API_KEY
+        embed_api_key = config.GOOGLE_API_KEY or config.GOOGLE_API_KEY_EMBED
         self.client = genai.Client(api_key=embed_api_key)
 
     def search(self, query: str, top_k: int = 20, filters: dict | None = None):

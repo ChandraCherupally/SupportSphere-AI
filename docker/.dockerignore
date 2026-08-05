@@ -1,0 +1,85 @@
+# =============================================================================
+# SupportSphere AI — .dockerignore
+# =============================================================================
+# Patterns listed here are EXCLUDED from the Docker build context.
+# A lean build context ensures fast builds and small Docker images.
+# =============================================================================
+
+# ── Virtual Environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+ENV/
+env/
+
+# ── Python Cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.pyo
+
+# ── Secrets & Environment Files ───────────────────────────────────────────────
+.env
+.env.*
+*.env
+secrets.json
+credentials.json
+
+# ── Git & GitHub ──────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+docs/
+README.md
+LICENSE
+*.md
+
+# ── Tests & Coverage ──────────────────────────────────────────────────────────
+tests/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.cache/
+
+# ── Jupyter Notebooks ─────────────────────────────────────────────────────────
+Notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# ── Logs & Temporary Files ────────────────────────────────────────────────────
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# ── Type Checkers & Linters ───────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+
+# ── IDEs & Editors ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ── OS Files ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── ML / AI Cache & Trackers ──────────────────────────────────────────────────
+.deepeval/
+mlruns/
+wandb/
+
+# ── uv / Python Version ───────────────────────────────────────────────────────
+.python-version

@@ -172,7 +172,7 @@ def decision_engine_node(state: SupportState) -> Dict[str, Any]:
         return _finish(res)
 
     platform_keywords = [
-        "site down", "service unavailable", "cannot login", "all pages inaccessible",
+        "site down", "site is down", "service unavailable", "cannot login", "all pages inaccessible",
         "500", "502", "503", "system outage", "platform outage",
     ]
     if any(phrase in combined_lower for phrase in platform_keywords):

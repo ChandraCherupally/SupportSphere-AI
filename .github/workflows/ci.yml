@@ -1,0 +1,107 @@
+# =============================================================
+# SupportSphere-AI — Continuous Integration (CI)
+# =============================================================
+# Responsibility: validate every push before deployment runs.
+#
+# CI is the gate in the sequential CI/CD pipeline.
+# CD (cd.yml) uses workflow_run to wait for this workflow
+# to complete successfully before it will start.
+#
+# Pipeline steps:
+#   1. Checkout repository
+#   2. Set up Python 3.12
+#   3. Install uv (official Astral installer)
+#   4. Restore uv dependency cache
+#   5. Install project dependencies (uv sync)
+#   6. Run pytest — fail immediately on any test failure
+#   7. Build Docker image (build only, no push)
+#
+# This workflow never pushes images, deploys, or touches EC2.
+# =============================================================
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ci:
+    name: Test & Docker Build
+    runs-on: ubuntu-latest
+
+    # Enable modern Docker BuildKit engine
+    env:
+      DOCKER_BUILDKIT: 1
+      COMPOSE_DOCKER_CLI_BUILD: 1
+
+    steps:
+      # ---------------------------------------------------------
+      # 1. Checkout repository
+      # ---------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------
+      # 2. Set up Python 3.12
+      # ---------------------------------------------------------
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ---------------------------------------------------------
+      # 3. Install uv using the official Astral installer
+      # ---------------------------------------------------------
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # ---------------------------------------------------------
+      # 4. Restore uv dependency cache
+      # ---------------------------------------------------------
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      # ---------------------------------------------------------
+      # 5. Install project dependencies
+      # ---------------------------------------------------------
+      - name: Install dependencies
+        run: uv sync --extra-index-url https://download.pytorch.org/whl/cpu
+
+      # ---------------------------------------------------------
+      # 6. Run pytest
+      #    Fails the workflow immediately on any test failure.
+      # ---------------------------------------------------------
+      - name: Run tests
+        env:
+          GOOGLE_API_KEY_EMBED: "ci-placeholder"
+          OPENAI_API_KEY: "ci-placeholder"
+          PINECONE_API_KEY: "ci-placeholder"
+          LANGSMITH_TRACING: "false"
+        run: uv run pytest tests/ -v
+
+      # ---------------------------------------------------------
+      # 7. Set up Docker Buildx
+      # ---------------------------------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ---------------------------------------------------------
+      # 8. Build Docker image with layer caching
+      #    push: false -> build only, no registry push or secrets.
+      # ---------------------------------------------------------
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
