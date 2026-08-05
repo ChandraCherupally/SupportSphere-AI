@@ -35,6 +35,7 @@ services:
       PINECONE_CLOUD: "${PINECONE_CLOUD:-aws}"
       PINECONE_REGION: "${PINECONE_REGION:-us-east-1}"
 
+    volumes:
       # Mount experiments and logs directories for persistence
       - ../data/experiments:/app/data/experiments
       - ../logs:/app/logs
