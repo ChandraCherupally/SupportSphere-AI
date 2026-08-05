@@ -104,47 +104,25 @@ jobs:
 
             # 2. Write production docker-compose.yml
             echo "Writing production docker-compose.yml..."
-            cat << 'COMPOSE' | sed 's/^            //' > ~/supportsphere-ai/docker-compose.yml
-            services:
-              supportsphere-ai:
-                image: ${IMAGE_NAME}:latest
-                container_name: supportsphere-ai
-                ports:
-                  - "8501:8501"
-                env_file:
-                  - .env
-                volumes:
-                  - ./data:/app/data
-                  - ./logs:/app/logs
-                restart: unless-stopped
-                working_dir: /app
-            COMPOSE
+            printf 'services:\n  supportsphere-ai:\n    image: ${IMAGE_NAME}:latest\n    container_name: supportsphere-ai\n    ports:\n      - "8501:8501"\n    env_file:\n      - .env\n    volumes:\n      - ./data:/app/data\n      - ./logs:/app/logs\n    restart: unless-stopped\n    working_dir: /app\n' > ~/supportsphere-ai/docker-compose.yml
 
             # 3. Generate runtime .env from GitHub Secrets
             echo "Creating runtime environment..."
-            cat << 'ENV' | sed 's/^            //' > ~/supportsphere-ai/.env
-            # AI Provider Keys
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
-            GOOGLE_API_KEY_EMBED=${{ secrets.GOOGLE_API_KEY_EMBED }}
-            GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
-
-            # Vector DB / Pinecone
-            VECTOR_DB=${{ secrets.VECTOR_DB }}
-            PINECONE_API_KEY=${{ secrets.PINECONE_API_KEY }}
-            PINECONE_INDEX_NAME=${{ secrets.PINECONE_INDEX_NAME }}
-            PINECONE_CLOUD=${{ secrets.PINECONE_CLOUD }}
-            PINECONE_REGION=${{ secrets.PINECONE_REGION }}
-
-            # LangSmith Observability
-            LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING }}
-            LANGSMITH_ENDPOINT=${{ secrets.LANGSMITH_ENDPOINT }}
-            LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
-            LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
-
-            # Docker Image Reference
-            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/supportsphere-ai
-            ENV
+            printf 'OPENAI_API_KEY=%s\nGOOGLE_API_KEY=%s\nGOOGLE_API_KEY_EMBED=%s\nGROQ_API_KEY=%s\nVECTOR_DB=%s\nPINECONE_API_KEY=%s\nPINECONE_INDEX_NAME=%s\nPINECONE_CLOUD=%s\nPINECONE_REGION=%s\nLANGSMITH_TRACING=%s\nLANGSMITH_ENDPOINT=%s\nLANGSMITH_API_KEY=%s\nLANGSMITH_PROJECT=%s\nIMAGE_NAME=%s/supportsphere-ai\n' \
+              "${{ secrets.OPENAI_API_KEY }}" \
+              "${{ secrets.GOOGLE_API_KEY }}" \
+              "${{ secrets.GOOGLE_API_KEY_EMBED }}" \
+              "${{ secrets.GROQ_API_KEY }}" \
+              "${{ secrets.VECTOR_DB }}" \
+              "${{ secrets.PINECONE_API_KEY }}" \
+              "${{ secrets.PINECONE_INDEX_NAME }}" \
+              "${{ secrets.PINECONE_CLOUD }}" \
+              "${{ secrets.PINECONE_REGION }}" \
+              "${{ secrets.LANGSMITH_TRACING }}" \
+              "${{ secrets.LANGSMITH_ENDPOINT }}" \
+              "${{ secrets.LANGSMITH_API_KEY }}" \
+              "${{ secrets.LANGSMITH_PROJECT }}" \
+              "${{ secrets.DOCKERHUB_USERNAME }}" > ~/supportsphere-ai/.env
 
             # 4. Pull latest image from Docker Hub
             echo "Pulling latest image from Docker Hub..."
