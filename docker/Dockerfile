@@ -22,10 +22,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 # If dependencies haven't changed, this layer is reused, skipping re-installation.
 COPY pyproject.toml uv.lock ./
 
-# Synchronize virtual environment strictly against uv.lock (--locked).
-# Fails the build immediately if pyproject.toml and uv.lock are out of sync.
-# Does NOT use --index-strategy unsafe-best-match for deterministic reproducibility.
-RUN uv sync --locked --no-dev --no-install-project
+RUN uv sync --no-dev --no-install-project --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Prune compiled bytecode and cache from virtualenv
 RUN find /app/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true \

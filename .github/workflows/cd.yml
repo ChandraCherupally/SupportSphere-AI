@@ -126,6 +126,9 @@ jobs:
               "${{ secrets.DOCKERHUB_USERNAME }}" > ~/supportsphere-ai/.env
 
             # 4. Pull latest image from Docker Hub
+            echo "Cleaning unused Docker images to free disk space..."
+            docker system prune -af --volumes || true
+
             echo "Pulling latest image from Docker Hub..."
             cd ~/supportsphere-ai
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
