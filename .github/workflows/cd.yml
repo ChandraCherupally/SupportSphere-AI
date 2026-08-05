@@ -104,7 +104,7 @@ jobs:
 
             # 2. Write production docker-compose.yml
             echo "Writing production docker-compose.yml..."
-            cat > ~/supportsphere-ai/docker-compose.yml << 'COMPOSE'
+            cat << 'COMPOSE' | sed 's/^            //' > ~/supportsphere-ai/docker-compose.yml
             services:
               supportsphere-ai:
                 image: ${IMAGE_NAME}:latest
@@ -122,7 +122,7 @@ jobs:
 
             # 3. Generate runtime .env from GitHub Secrets
             echo "Creating runtime environment..."
-            cat > ~/supportsphere-ai/.env << 'ENV'
+            cat << 'ENV' | sed 's/^            //' > ~/supportsphere-ai/.env
             # AI Provider Keys
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
