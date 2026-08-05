@@ -54,6 +54,8 @@ def _get_active_benchmark_dataset(
             logger.warning("Silent fallback: Failed to load demo eval dataset: %s", e)
             return None, None, False
 
+    return None, None, False
+
 def _format_ragas_metric(val: Any) -> str:
     """Format RAGAS metric value into 3-decimal float string or N/A for template tickets."""
     if val is None or pd.isna(val):

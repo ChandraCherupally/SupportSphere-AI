@@ -105,7 +105,7 @@ jobs:
 
             # 2. Write production docker-compose.yml
             echo "Writing production docker-compose.yml..."
-            printf 'services:\n  supportsphere-ai:\n    image: ${IMAGE_NAME}:latest\n    container_name: supportsphere-ai\n    ports:\n      - "8501:8501"\n    env_file:\n      - .env\n    volumes:\n      - ./data:/app/data\n      - ./logs:/app/logs\n    restart: unless-stopped\n    working_dir: /app\n' > ~/supportsphere-ai/docker-compose.yml
+            printf 'services:\n  supportsphere-ai:\n    image: ${IMAGE_NAME}:latest\n    container_name: supportsphere-ai\n    ports:\n      - "8501:8501"\n    env_file:\n      - .env\n    volumes:\n      - ./data/experiments:/app/data/experiments\n      - ./logs:/app/logs\n    restart: unless-stopped\n    working_dir: /app\n' > ~/supportsphere-ai/docker-compose.yml
 
             # 3. Generate runtime .env from GitHub Secrets
             echo "Creating runtime environment..."
