@@ -16,6 +16,8 @@ Welcome to the **SupportSphere AI System Architecture Guide**. This document exp
 
 ## 1. High-Level System Topology
 
+> 🎨 **Interactive Visual Diagram**: You can open and edit the native Excalidraw diagram file at [`docs/architecture.excalidraw`](architecture.excalidraw) in [Excalidraw.com](https://excalidraw.com).
+
 SupportSphere AI is architected as a **stateless, multi-tenant customer support automation platform**. It handles incoming customer tickets across multiple companies (HackerRank, Claude, Visa) with strict tenant isolation.
 
 ```
