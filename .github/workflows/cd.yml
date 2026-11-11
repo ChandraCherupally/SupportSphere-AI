@@ -1,41 +1,27 @@
 # =============================================================
 # SupportSphere-AI — Continuous Deployment (CD)
 # =============================================================
-# Responsibility: deploy to production after CI passes.
-#
-# This workflow is intentionally NOT triggered by git push.
-# It is triggered by workflow_run so that deployment is
-# guaranteed to happen only after the CI workflow has
-# completed successfully. If CI fails, this workflow
-# never starts — Docker Hub receives no image, EC2 is
-# never touched.
+# Streamlit Community Cloud auto-deploys on every push to main.
+# This workflow retains the Docker Hub image build for portability,
+# and replaces the EC2 SSH step with a deployment status notice.
 #
 # Pipeline:
-#   1. Checkout repository          (needed to read docker/ files)
+#   1. Checkout repository
 #   2. Log in to Docker Hub
 #   3. Set up Docker Buildx
-#   4. Build & push image           (latest + SHA tags)
-#   5. SSH into EC2 instance
-#   6. Prepare deployment directory on server
-#   7. Write production docker-compose.yml
-#   8. Generate runtime .env from GitHub Secrets
-#   9. Pull latest image from Docker Hub
-#   10. Restart application stack
-#   11. Clean old Docker images
-#   12. Health check & verification
+#   4. Build & push image  (latest + SHA tags — optional backup)
+#   5. Notify deployment success (Streamlit Cloud handles the rest)
 # =============================================================
 
 name: CD
 
 on:
-  # Trigger CD only after the CI workflow completes successfully.
   workflow_run:
     workflows:
-      - CI # must match the name: field in ci.yml exactly
+      - CI
     types:
       - completed
 
-  # Allow manual re-deployment from the GitHub Actions UI
   workflow_dispatch:
 
 jobs:
@@ -43,7 +29,6 @@ jobs:
     name: Push & Deploy
     runs-on: ubuntu-latest
 
-    # Only run when CI has completed successfully (or manual trigger)
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
@@ -56,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ---------------------------------------------------------
-      # 2. Log in to Docker Hub
+      # 2. Log in to Docker Hub (optional — keep image as backup)
       # ---------------------------------------------------------
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -71,7 +56,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # ---------------------------------------------------------
-      # 4. Build and push Docker image
+      # 4. Build and push Docker image to Docker Hub
+      #    (kept as a portable backup image)
       # ---------------------------------------------------------
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -86,72 +72,13 @@ jobs:
           cache-to: type=gha,mode=max
 
       # ---------------------------------------------------------
-      # 5. SSH into EC2 & Deploy Container Stack
+      # 5. Streamlit Cloud Deployment Notice
+      #    Streamlit Community Cloud watches the main branch and
+      #    auto-deploys on every push — no SSH or EC2 needed.
       # ---------------------------------------------------------
-      - name: Deploy to AWS EC2 over SSH
-        uses: appleboy/ssh-action@v1.1.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            echo "🚀 Starting SupportSphere AI Production Deployment..."
-
-            # 1. Prepare deployment directory
-            mkdir -p ~/supportsphere-ai/data/experiments ~/supportsphere-ai/logs
-            sudo chmod -R 777 ~/supportsphere-ai/data ~/supportsphere-ai/logs || true
-
-            # 2. Write production docker-compose.yml
-            echo "Writing production docker-compose.yml..."
-            printf 'services:\n  supportsphere-ai:\n    image: ${IMAGE_NAME}:latest\n    container_name: supportsphere-ai\n    ports:\n      - "8501:8501"\n    env_file:\n      - .env\n    volumes:\n      - ./data/experiments:/app/data/experiments\n      - ./logs:/app/logs\n    restart: unless-stopped\n    working_dir: /app\n' > ~/supportsphere-ai/docker-compose.yml
-
-            # 3. Generate runtime .env from GitHub Secrets
-            echo "Creating runtime environment..."
-            printf 'OPENAI_API_KEY=%s\nGOOGLE_API_KEY=%s\nGOOGLE_API_KEY_EMBED=%s\nGROQ_API_KEY=%s\nVECTOR_DB=%s\nPINECONE_API_KEY=%s\nPINECONE_INDEX_NAME=%s\nPINECONE_CLOUD=%s\nPINECONE_REGION=%s\nLANGSMITH_TRACING=%s\nLANGSMITH_ENDPOINT=%s\nLANGSMITH_API_KEY=%s\nLANGSMITH_PROJECT=%s\nIMAGE_NAME=%s/supportsphere-ai\n' \
-              "${{ secrets.OPENAI_API_KEY }}" \
-              "${{ secrets.GOOGLE_API_KEY }}" \
-              "${{ secrets.GOOGLE_API_KEY_EMBED }}" \
-              "${{ secrets.GROQ_API_KEY }}" \
-              "${{ secrets.VECTOR_DB }}" \
-              "${{ secrets.PINECONE_API_KEY }}" \
-              "${{ secrets.PINECONE_INDEX_NAME }}" \
-              "${{ secrets.PINECONE_CLOUD }}" \
-              "${{ secrets.PINECONE_REGION }}" \
-              "${{ secrets.LANGSMITH_TRACING }}" \
-              "${{ secrets.LANGSMITH_ENDPOINT }}" \
-              "${{ secrets.LANGSMITH_API_KEY }}" \
-              "${{ secrets.LANGSMITH_PROJECT }}" \
-              "${{ secrets.DOCKERHUB_USERNAME }}" > ~/supportsphere-ai/.env
-
-            # 4. Pull latest image from Docker Hub
-            echo "Pruning unused Docker objects, build cache, and system package caches..."
-            docker system prune -af --volumes || true
-            docker builder prune -af || true
-            sudo apt-get clean && sudo rm -rf /var/lib/apt/lists/* || true
-
-            echo "Pulling latest image from Docker Hub..."
-            cd ~/supportsphere-ai
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            docker compose pull
-
-            # 5. Restart application
-            echo "Restarting application stack..."
-            docker compose up -d --remove-orphans
-
-            # 6. Clean old Docker images
-            echo "Cleaning dangling Docker images..."
-            docker image prune -f
-
-            # 7. Health check and verification
-            echo "Running application health check..."
-            sleep 10
-
-            if docker ps --filter "name=supportsphere-ai" --filter "status=running" | grep -q "supportsphere-ai"; then
-              echo "✅ Deployment completed successfully! Container supportsphere-ai is healthy."
-            else
-              echo "❌ Health check failed — container supportsphere-ai is not running!"
-              docker compose logs --tail 50
-              exit 1
-            fi
+      - name: Streamlit Cloud Deployment Notice
+        run: |
+          echo "✅ Docker image pushed to Docker Hub successfully."
+          echo "🚀 Streamlit Community Cloud will auto-deploy from the main branch."
+          echo "🌐 App URL: https://supportsphere-ai.streamlit.app"
+          echo "📋 Manage app: https://share.streamlit.io"
